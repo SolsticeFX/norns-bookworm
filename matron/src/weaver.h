@@ -53,6 +53,10 @@ extern void w_handle_osc_event(char *from_host, char *from_port, char *path, lo_
 
 //--- audio engine introspection
 extern void w_handle_engine_report(const char **arr, const int num);
+/* extern void w_handle_command_report(const struct engine_command *arr, */
+/*                                     const int num); */
+/* extern void w_handle_poll_report(const struct engine_poll *arr, */
+/*                                  const int num); */
 extern void w_handle_engine_load_done();
 
 //--- gpio handler
@@ -92,9 +96,6 @@ extern void w_handle_startup_ready_timeout();
 
 // util callbacks
 extern void w_handle_system_cmd();
-
-// display driver callbacks
-extern void w_handle_screen_refresh();
 
 // custom events
 extern void w_handle_custom_weave(struct event_custom *ev);

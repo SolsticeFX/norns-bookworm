@@ -131,7 +131,7 @@ int dev_monitor_scan(void) {
 
     udev = udev_new();
     if (udev == NULL) {
-        fprintf(stderr, "dev_monitor: failed to create udev\n");
+        fprintf(stderr, "device_monitor_scan(): failed to create udev\n");
         return 1;
     }
 
@@ -227,16 +227,16 @@ void rm_dev(struct udev_device *dev, int dev_file) {
 }
 
 void rm_dev_tty(struct udev_device *dev, const char *node) {
-    // fprintf(stderr, "rm_dev_tty: %s\n", node);
+    fprintf(stderr, "rm_dev_tty: %s\n", node);
 
     if (fnmatch("/dev/ttyUSB*", node, 0) == 0) {
-        fprintf(stderr, "dev_monitor: got ttyUSB, assuming grid\n");
+        fprintf(stderr, "got ttyUSB, assuming grid\n");
         dev_list_remove(DEV_TYPE_MONOME, node);
         return;
     }
 
     if (is_dev_monome_grid(dev)) {
-        fprintf(stderr, "dev_monitor: TTY appears to be ACM grid\n");
+        fprintf(stderr, "tty appears to be ACM grid\n");
         dev_list_remove(DEV_TYPE_MONOME, node);
         return;
     }
@@ -246,7 +246,7 @@ void rm_dev_tty(struct udev_device *dev, const char *node) {
         return;
     }
     
-    fprintf(stderr, "dev_monitor: unmatched TTY device was removed from %s\n", node);
+    fprintf(stderr, "dev_monitor: an unrecognized TTY device was removed.\n");
 
 }
 
@@ -275,24 +275,24 @@ void add_dev_tty(struct udev_device *dev) {
     }
     char *name = get_device_name(dev);
     if (fnmatch("/dev/ttyUSB*", node, 0) == 0) {
-        fprintf(stderr, "dev_monitor: got ttyUSB, assuming grid\n");
+        fprintf(stderr, "got ttyUSB, assuming grid\n");
         dev_list_add(DEV_TYPE_MONOME, node, name);
     } else if (is_dev_monome_grid(dev)) {
-        fprintf(stderr, "dev_monitor: TTY appears to be ACM grid\n");
+        fprintf(stderr, "tty appears to be grid-st\n");
         dev_list_add(DEV_TYPE_MONOME, node, name);
     } else if (is_dev_crow(dev)) {
         fprintf(stderr, "tty is a crow\n");
         dev_list_add(DEV_TYPE_CROW, node, name);
     } else {
-        fprintf(stderr, "dev_monitor: unmatched TTY device %s at %s\n", name, node);
+        fprintf(stderr, "device monitor: unmatched tty device\n");
     }
 }
 
 void add_dev_input(struct udev_device *dev) {
     const char *node = udev_device_get_devnode(dev);
     if (node == NULL) {
-	    fprintf(stderr, "dev_monitor: skipping node-less entry in /dev/input\n");
-	    return;
+	fprintf(stderr, "device_monitor: skipping node-less entry in /dev/input\n");
+	return;
     }
     char *name = get_device_name(dev);
     dev_list_add(DEV_TYPE_HID, node, name);
@@ -304,7 +304,7 @@ void add_dev_sound(struct udev_device *dev) {
     const char *alsa_node = get_alsa_midi_node(dev);
     if (alsa_node != NULL) {
 	char *name = get_device_name(dev);
-	fprintf(stderr, "dev_monitor: adding midi device %s\n", name);
+	fprintf(stderr, "device_monitor(): adding midi device %s\n", name);
         dev_list_add(DEV_TYPE_MIDI, alsa_node, name);
     }
 }
@@ -327,7 +327,7 @@ const char *get_alsa_midi_node(struct udev_device *dev) {
         while ((sysdir_ent = readdir(sysdir)) != NULL) {
             if (sscanf(sysdir_ent->d_name, "midiC%uD%u", &alsa_card, &alsa_dev) == 2) {
                 if (asprintf(&result, "/dev/snd/%s", sysdir_ent->d_name) < 0) {
-                    fprintf(stderr, "dev_monitor: failed to create alsa device path for %s\n", sysdir_ent->d_name);
+                    fprintf(stderr, "failed to create alsa device path for %s\n", sysdir_ent->d_name);
                     return NULL;
                 }
             }
@@ -354,14 +354,10 @@ char *get_device_name(struct udev_device *dev) {
 }
 
 int is_dev_monome_grid(struct udev_device *dev) {
-    const char *vendor, *model, *vendor_id, *model_id;
+    const char *vendor, *model;
 
     vendor = udev_device_get_property_value(dev, "ID_VENDOR");
     model = udev_device_get_property_value(dev, "ID_MODEL");
-    vendor_id = vendor != NULL ? vendor : udev_device_get_property_value(dev, "ID_VENDOR_ID");
-    model_id = model != NULL ? model : udev_device_get_property_value(dev, "ID_MODEL_ID");
-
-    fprintf(stderr, "dev_monitor: vendor=%s model=%s\n", vendor_id, model_id);
 
     if (vendor == NULL || model == NULL) {
         return 0;
