@@ -48,6 +48,9 @@ int input_create(input_type_t type, const char* name, input_config_t* cfg) {
         case INPUT_TYPE_GPIO_ENC:
             if ((err = input_init(input, cfg, &gpio_enc_ops))) goto fail;
             break;
+        case INPUT_TYPE_DSI_TOUCH:
+            if ((err = input_init(input, cfg, &dsi_touch_ops))) goto fail;
+            break;
         /* case INPUT_TYPE_KBM: */
         /*     if ((err = input_init(input, &kbm_input_ops))) goto fail; */
         /*     break; */

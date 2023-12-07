@@ -16,10 +16,25 @@ typedef struct _input_gpio_priv {
     char* dev;
 } input_gpio_priv_t;
 
+typedef struct _touch_dsi_priv {
+    int fd;
+    char* dev;
+} touch_dsi_priv_t;
+
 typedef struct _enc_gpio_priv {
     input_gpio_priv_t base;
     int index;
 } enc_gpio_priv_t;
+
+struct touch_input {
+    uint8_t finger;
+    uint8_t press;
+    uint32_t x;
+    uint32_t y;
+}; 
+
+struct touch_input tinput = {0, 0, 0, 0};
+
 
 static int input_gpio_config(matron_io_t* io, lua_State *l);
 static int enc_gpio_config(matron_io_t* io, lua_State *l);
@@ -27,6 +42,7 @@ static int input_gpio_setup(matron_io_t* io);
 static void input_gpio_destroy(matron_io_t* io);
 static void* enc_gpio_poll(void* data);
 static void* key_gpio_poll(void* data);
+static void* touch_dsi_poll(void* data);
 static int open_and_grab(const char *pathname, int flags);
 
 input_ops_t key_gpio_ops = {
@@ -38,6 +54,16 @@ input_ops_t key_gpio_ops = {
     .io_ops.destroy   = input_gpio_destroy,
  
     .poll = key_gpio_poll,
+};
+
+input_ops_t touch_dsi_ops = {
+    .io_ops.name      = "touch:dsi",
+    .io_ops.type      = IO_INPUT,
+    .io_ops.data_size = sizeof(touch_dsi_priv_t),
+    .io_ops.config    = input_gpio_config,
+    .io_ops.setup     = input_gpio_setup,
+    .io_ops.destroy   = input_gpio_destroy,
+    .poll = touch_dsi_poll,
 };
 
 input_ops_t enc_gpio_ops = {
@@ -101,6 +127,8 @@ int input_gpio_setup(matron_io_t* io) {
         fprintf(stderr, "ERROR (%s) device not available: %s\n", io->ops->name, priv->dev);
         return priv->fd;
     }
+   
+
     return input_setup(io);
 }
 
@@ -180,6 +208,83 @@ void* key_gpio_poll(void* data) {
     return NULL;
 }
 
+void* touch_dsi_poll(void* data) {
+    matron_input_t* input = data;
+    input_gpio_priv_t* priv = input->io.data;
+
+    int rd;
+    unsigned int i;
+    struct input_event event[64];
+
+    while (1) {
+        rd = read(priv->fd, event, sizeof(struct input_event) * 64);
+        if (rd < (int)sizeof(struct input_event)) {
+            fprintf(stderr, "ERROR (touchscreen) read error\n");
+        }
+
+        for (i = 0; i < rd / sizeof(struct input_event); i++) {
+            if (event[i].type!=0) { // make sure it's not EV_SYN == 0
+                
+                if (event[i].code==330 && event[i].value==1) {
+                //fprintf(stderr, "PRESS\n");
+                tinput.press = event[i].value;
+                }
+                else if (event[i].code==330 && event[i].value==0) {
+                //fprintf(stderr, "RELEASE\n");
+                tinput.press = event[i].value;
+                }
+                else if (event[i].code==0) { 
+                //fprintf(stderr, "ABS X = %d\n", event[i].value);
+               // tinput.x = event[i].value;
+                }
+                else if (event[i].code==1){
+                //fprintf(stderr, "ABS Y = %d\n", event[i].value);
+                //tinput.y = event[i].value;
+                }
+                else if (event[i].code==47) {
+                //fprintf(stderr, "Finger = %d\n", event[i].value);
+                tinput.finger = event[i].value;
+                }
+                else if (event[i].code==53) {
+                //fprintf(stderr, "ABS MT POS X = %d\n", event[i].value);
+                tinput.x = event[i].value;
+                }
+                else if (event[i].code==54) {
+                //fprintf(stderr, "ABS MT POS Y = %d\n", event[i].value);
+                tinput.y = event[i].value;
+                }
+                
+                else {
+                   //  fprintf(stderr, "Unrecognised code and value \n");
+                   // fprintf(stderr, "----\n");
+
+                   // fprintf(stderr, "Code = %d, Value = %d", event[i].code, event[i].value);
+
+                }
+            }
+
+
+            else {
+                fprintf(stderr, "x: %d", tinput.x);
+                fprintf(stderr, "-------------- SYN_REPORT ------------\n");
+
+                union event_data *ev = event_data_new(EVENT_TOUCH);
+                ev->touch.finger = tinput.finger;
+                ev->touch.press = tinput.press;
+                ev->touch.x = tinput.x;
+                ev->touch.y = tinput.y;
+                
+                event_post(ev);
+
+            
+                
+                
+            }
+        }
+    }
+
+    return NULL;
+}
 int open_and_grab(const char *pathname, int flags) {
     int fd;
     int open_attempts = 0, ioctl_attempts = 0;

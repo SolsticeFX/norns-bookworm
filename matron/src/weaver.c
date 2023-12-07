@@ -2340,6 +2340,18 @@ void w_handle_key(const int n, const int val) {
     l_report(lvm, l_docall(lvm, 2, 0));
 }
 
+// touch handler
+void w_handle_touch(const int finger, const int press, const uint32_t x, const uint32_t y) {
+    lua_getglobal(lvm, "_norns");
+    lua_getfield(lvm, -1, "touch");
+    lua_remove(lvm, -2);
+    lua_pushinteger(lvm, finger);
+    lua_pushinteger(lvm, press);
+    lua_pushinteger(lvm, x);
+    lua_pushinteger(lvm, y);
+    l_report(lvm, l_docall(lvm, 4, 0));
+}
+
 // gpio handler
 void w_handle_enc(const int n, const int delta) {
     lua_getglobal(lvm, "_norns");

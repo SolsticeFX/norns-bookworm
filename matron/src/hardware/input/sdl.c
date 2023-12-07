@@ -14,7 +14,7 @@ static int input_sdl_setup(matron_io_t* io);
 static void input_sdl_destroy(matron_io_t* io);
 static void* input_sdl_poll(void* data);
 
-input_ops_t input_sdl_ops = {
+input_ops_t input_sdl_oops = {
     .io_ops.name      = "input:sdl",
     .io_ops.type      = IO_INPUT,
     .io_ops.data_size = sizeof(input_sdl_priv_t),

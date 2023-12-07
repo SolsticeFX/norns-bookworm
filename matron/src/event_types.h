@@ -24,6 +24,8 @@ typedef enum {
     EVENT_KEY,
     // gpio event
     EVENT_ENC,
+    // DSI Touchscreen event
+    EVENT_TOUCH,
     // battery level change
     EVENT_BATTERY,
     // power cable present
@@ -253,6 +255,15 @@ struct event_enc {
     int8_t delta;
 }; // +2
 
+struct event_touch {
+    struct event_common common;
+    uint8_t finger;
+    uint8_t press;
+    uint32_t x;
+    uint32_t y;
+
+}; // +2
+
 struct event_poll_value {
     struct event_common common;
     uint32_t idx;
@@ -357,6 +368,7 @@ union event_data {
     struct event_osc osc_event;
     struct event_key key;
     struct event_enc enc;
+    struct event_touch touch;
     struct event_battery battery;
     struct event_power power;
     struct event_stat stat;
