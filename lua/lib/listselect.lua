@@ -17,18 +17,15 @@ function ls.enter(list, callback)
     ls.key_restore = key
     ls.enc_restore = enc
     ls.redraw_restore = redraw
-    ls.refresh_restore = refresh
     key = ls.key
     enc = ls.enc
     redraw = norns.none
-    refresh = norns.none
     norns.menu.init()
   else
     ls.key_restore = norns.menu.get_key()
     ls.enc_restore = norns.menu.get_enc()
     ls.redraw_restore = norns.menu.get_redraw()
-    ls.refresh_restore = norns.menu.get_refresh()
-    norns.menu.set(ls.enc, ls.key, ls.redraw, ls.refresh)
+    norns.menu.set(ls.enc, ls.key, ls.redraw)
   end
   ls.redraw()
 end
@@ -38,10 +35,9 @@ function ls.exit()
     key = ls.key_restore
     enc = ls.enc_restore
     redraw = ls.redraw_restore
-    refresh = ls.refresh_restore
     norns.menu.init()
   else
-    norns.menu.set(ls.enc_restore, ls.key_restore, ls.redraw_restore, ls.refresh_restore)
+    norns.menu.set(ls.enc_restore, ls.key_restore, ls.redraw_restore)
   end
   if ls.selection then ls.callback(ls.selection)
   else ls.callback("cancel") end
@@ -97,7 +93,5 @@ ls.redraw = function()
   end
   screen.update()
 end
-
-ls.refresh = function() ls.redraw() end
 
 return ls

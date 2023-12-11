@@ -24,8 +24,13 @@ typedef enum {
     EVENT_KEY,
     // gpio event
     EVENT_ENC,
-    // DSI Touchscreen event
+
+
+    // Touchscreen event
     EVENT_TOUCH,
+    
+    
+    
     // battery level change
     EVENT_BATTERY,
     // power cable present

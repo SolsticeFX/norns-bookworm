@@ -61,7 +61,6 @@ function Hid.new(id, name, types, codes, dev, guid)
   device.is_ascii_keyboard = hid_device_class.is_ascii_keyboard(device)
   device.is_mouse = hid_device_class.is_mouse(device)
   device.is_gamepad = hid_device_class.is_gamepad(device)
-
   -- autofill next postiion
   local connected = {}
   for i=1,4 do
@@ -120,7 +119,8 @@ function Hid.cleanup()
     if dev.is_ascii_keyboard then print("this appears to be an ASCII keyboard!") end
     if dev.is_mouse then print("this appears to be a mouse!") end
     if dev.is_gamepad then print("this appears to be a gamepad!") end
-  end
+ 
+ end
 
   Hid.remove = function(dev) end
 end

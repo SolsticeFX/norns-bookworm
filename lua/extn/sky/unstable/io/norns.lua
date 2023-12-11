@@ -1,9 +1,13 @@
 --
 -- NornsInput
 --
+
+--TOATDO
+
 local NornsInput = sky.InputBase:extend()
 NornsInput.KEY_EVENT = 'KEY'
 NornsInput.ENC_EVENT = 'ENC'
+NornsInput.TOUCH_EVENT = 'TOUCH'
 NornsInput.REDRAW_EVENT = 'REDRAW'
 
 local SingletonInput = nil
@@ -15,6 +19,10 @@ end
 
 local function do_enc(...)
   if SingletonInput then SingletonInput:on_enc_event(...) end
+end
+
+local function do_touch(...)
+  if SingletonInput then SingletonInput:on_touch_event(...) end
 end
 
 local function do_redraw()
@@ -37,6 +45,7 @@ function NornsInput:new(props)
   -- note this (re)defined script global handlers
   key = do_key
   enc = do_enc
+  touch = do_touch
   redraw = do_redraw
 
   self._redraw_event = self.mk_redraw()
@@ -58,6 +67,16 @@ function NornsInput.is_enc(event)
   return event.type == NornsInput.ENC_EVENT
 end
 
+function NornsInput.mk_touch(finger,press,x,y)
+  return { type = NornsInput.TOUCH_EVENT, finger = finger, press = press, x = x, y = y }
+end
+
+
+
+function NornsInput.is_touch(event)
+  return event.type == NornsInput.TOUCH_EVENT
+end
+
 function NornsInput.mk_redraw(beats)
   return { type = NornsInput.REDRAW_EVENT, beat = beats or clock.get_beats() }
 end
@@ -73,6 +92,11 @@ end
 function NornsInput:on_enc_event(n, delta)
   if self.chain then self.chain:process(self.mk_enc(n, delta)) end
 end
+
+function NornsInput:on_touch_event(finger, press, x, y)
+  if self.chain then self.chain:process(self.mk_touch(finger, press, x, y)) end
+end
+
 
 function NornsInput:on_redraw()
   if self.chain then self.chain:process(self.mk_redraw()) end
@@ -139,14 +163,17 @@ return {
   -- events
   mk_key = NornsInput.mk_key,
   mk_enc = NornsInput.mk_enc,
+  mk_touch = NornsInput.mk_touch,
   mk_redraw = NornsInput.mk_redraw,
 
   is_key = NornsInput.is_key,
   is_enc = NornsInput.is_enc,
+  is_touch = NornsInput.is_touch,
   is_redraw = NornsInput.is_redraw,
 
   KEY_EVENT = NornsInput.KEY_EVENT,
   ENC_EVENT = NornsInput.ENC_EVENT,
+  TOUCH_EVENT = NornsInput.TOUCH_EVENT,
   REDRAW_EVENT = NornsInput.REDRAW_EVENT,
 }
 

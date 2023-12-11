@@ -13,7 +13,7 @@ local function check_newest()
   print("checking for update")
   if m.alt then print("stable and beta") end
   norns.system_cmd( [[curl -s \
-      https://raw.githubusercontent.com/monome/norns/main/releases.txt \
+      https://github.com/SolsticeFX/norns-bookworm/main/releases.txt \
       ]],
       checked)
 end

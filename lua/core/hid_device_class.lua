@@ -66,6 +66,7 @@ HidDeviceClass.is_tablet = function(device)
   -- TODO
 end
 
+
 --- ... other TODO?
 
 

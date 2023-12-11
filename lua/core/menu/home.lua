@@ -39,7 +39,7 @@ end
 
 local xrun_warn_count = 0
 local draw_stats = function()
-  screen.level(1)
+  screen.level(7)
   if norns.is_norns then
     screen.move(127,55)
     screen.text_right(norns.battery_current.."mA @ ".. norns.battery_percent.."%")
@@ -90,11 +90,17 @@ m.redraw = function()
   for i=1,3 do
     screen.move(0,25+10*i)
     if(i==m.pos) then
-      screen.level(15)
+      screen.rgblevel(15,0,0)
     else
       screen.level(4)
     end
-    screen.text(m.list[i].." >")
+    screen.text(m.list[i])
+    if(i==m.pos) then
+      screen.rgblevel(0,15,0)
+    else
+      screen.level(4)
+    end 
+  screen.text(" >")
   end
 
   if not _menu.showstats then

@@ -96,6 +96,10 @@ static int _screen_font_face(lua_State *l);
 static int _screen_font_size(lua_State *l);
 static int _screen_aa(lua_State *l);
 static int _screen_level(lua_State *l);
+static int _screen_rlevel(lua_State *l);
+static int _screen_glevel(lua_State *l);
+static int _screen_blevel(lua_State *l);
+static int _screen_rgblevel(lua_State *l);
 static int _screen_line_width(lua_State *l);
 static int _screen_line_cap(lua_State *l);
 static int _screen_line_join(lua_State *l);
@@ -445,6 +449,10 @@ void w_init(void) {
     lua_register_norns("screen_font_size", &_screen_font_size);
     lua_register_norns("screen_aa", &_screen_aa);
     lua_register_norns("screen_level", &_screen_level);
+    lua_register_norns("screen_rlevel", &_screen_rlevel);
+    lua_register_norns("screen_glevel", &_screen_glevel);
+    lua_register_norns("screen_blevel", &_screen_blevel);
+    lua_register_norns("screen_rgblevel", &_screen_rgblevel);
     lua_register_norns("screen_line_width", &_screen_line_width);
     lua_register_norns("screen_line_cap", &_screen_line_cap);
     lua_register_norns("screen_line_join", &_screen_line_join);
@@ -688,6 +696,59 @@ int _screen_level(lua_State *l) {
     lua_settop(l, 0);
     return 0;
 }
+
+
+/***
+ * screen: change level (color)
+ * @function s_level
+ * @tparam integer level, 0 (black) to 15 (white)
+ */
+int _screen_rlevel(lua_State *l) {
+    lua_check_num_args(1);
+    int x = (int)luaL_checkinteger(l, 1);
+    screen_rlevel(x);
+    lua_settop(l, 0);
+    return 0;
+}
+
+/***
+ * screen: change level (color)
+ * @function s_level
+ * @tparam integer level, 0 (black) to 15 (white)
+ */
+int _screen_glevel(lua_State *l) {
+    lua_check_num_args(1);
+    int x = (int)luaL_checkinteger(l, 1);
+    screen_glevel(x);
+    lua_settop(l, 0);
+    return 0;
+}
+
+/***
+ * screen: change level (color)
+ * @function s_level
+ * @tparam integer level, 0 (black) to 15 (white)
+ */
+int _screen_blevel(lua_State *l) {
+    lua_check_num_args(1);
+    int x = (int)luaL_checkinteger(l, 1);
+    screen_blevel(x);
+    lua_settop(l, 0);
+    return 0;
+}
+
+int _screen_rgblevel(lua_State *l) {
+    lua_check_num_args(3);
+    int r = (int)luaL_checkinteger(l, 1);
+    int g = (int)luaL_checkinteger(l, 2);
+    int b = (int)luaL_checkinteger(l, 3);
+    screen_rgblevel(r,g,b);
+    lua_settop(l, 0);
+    return 0;
+}
+
+
+
 
 /***
  * screen: set line width

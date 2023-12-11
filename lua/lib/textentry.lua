@@ -50,7 +50,6 @@ te.enter = function(callback, default, heading, check)
     te.key_restore = key
     te.enc_restore = enc
     te.redraw_restore = redraw
-    te.refresh_restore = refresh
     key = te.key
     enc = te.enc
     norns.menu.init()
@@ -59,8 +58,7 @@ te.enter = function(callback, default, heading, check)
     te.key_restore = norns.menu.get_key()
     te.enc_restore = norns.menu.get_enc()
     te.redraw_restore = norns.menu.get_redraw()
-    te.refresh_restore = norns.menu.get_refresh()
-    norns.menu.set(te.enc, te.key, te.redraw, te.refresh)
+    norns.menu.set(te.enc, te.key, te.redraw)
   end
   te.redraw()
 end
@@ -73,10 +71,9 @@ te.exit = function()
     key = te.key_restore
     enc = te.enc_restore
     redraw = te.redraw_restore
-    refresh = te.refresh_restore
     norns.menu.init()
   else
-    norns.menu.set(te.enc_restore, te.key_restore, te.redraw_restore, te.refresh_restore)
+    norns.menu.set(te.enc_restore, te.key_restore, te.redraw_restore)
   end
   if te.txt then te.callback(te.txt)
   else te.callback(nil) end
@@ -90,7 +87,7 @@ te.key = function(n,z)
   elseif n==3 and z==1 then
     if te.row == 0 then
       local ch = ((5+te.pos)%95)+32
-      te.txt = te.txt .. utf8.char(ch)
+      te.txt = te.txt .. string.char(ch)
       if te.check then
         te.warn = te.check(te.txt)
       end
@@ -139,7 +136,7 @@ te.redraw = function()
   for x=0,15 do
     if x==5 and te.row==0 then screen.level(15) else screen.level(2) end
     screen.move(x*8,46)
-    screen.text(utf8.char((x+te.pos)%95+32))
+    screen.text(string.char((x+te.pos)%95+32))
   end
 
   screen.move(0,60)
@@ -151,7 +148,5 @@ te.redraw = function()
 
   screen.update()
 end
-
-te.refresh = function() te.redraw() end
 
 return te

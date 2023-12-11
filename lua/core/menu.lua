@@ -13,14 +13,15 @@ _menu = {}
 -- global functions for scripts
 key = norns.none
 enc = norns.none
+touch = norns.none
 redraw = norns.blank
 cleanup = norns.none
-refresh = norns.none
 
 -- tuning
 local KEY1_HOLD_TIME = 0.25
 
 _menu.mode = false
+_menu.paramMode = false
 _menu.page = "HOME"
 _menu.panel = 3
 _menu.panels = {"MIX", "TAPE", "HOME", "PARAMS"}
@@ -47,6 +48,7 @@ t.event = function(_)
   _menu.key(1,1)
   pending = false
   if _menu.mode == true then _menu.redraw() end
+  if _menu.paramMode == true then _menu.redraw() end
 end
 -- metro for page status updates
 _menu.timer = metro[32]
@@ -56,6 +58,7 @@ nav_vanish.time = 1
 nav_vanish.event = function()
   _menu.shownav = false
   if _menu.mode == true then _menu.redraw() end
+  if _menu.paramMode == true then _menu.redraw() end
   nav_vanish:stop()
 end
 -- screen.lua has metro[35] for screensaver
@@ -65,16 +68,16 @@ end
 norns.menu = {}
 norns.menu.init = function() _menu.set_mode(_menu.mode) end -- used by fileselect.lua
 norns.menu.status = function() return _menu.mode end
-norns.menu.set = function(new_enc, new_key, new_redraw, new_refresh)
+norns.menu.set = function(new_enc, new_key, new_redraw, new_touch)
   _menu.penc = new_enc
   _menu.key = new_key
   _menu.redraw = new_redraw
-  _menu.refresh = new_refresh
+  _menu.touch = new_touch
 end
 norns.menu.get_enc = function() return _menu.penc end
 norns.menu.get_key = function() return _menu.key end
+norns.menu.get_touch = function() return _menu.touch end
 norns.menu.get_redraw = function() return _menu.redraw end
-norns.menu.get_refresh = function() return _menu.refresh end
 norns.menu.toggle = function(status) _menu.set_mode(status) end
 
 norns.scripterror = function(msg)
@@ -109,6 +112,16 @@ end
 
 
 -- input redirection
+--TODO: redo with new UI widgets
+
+_norns.touch = function(finger, press, x, y)
+  print("x: "..x)
+  if press==0 and x>400 then
+ _menu.key(3,1)
+  elseif press == 0 and x<400 then
+    _menu.key(2,1)
+  end
+end
 
 _menu.enc = function(n, delta)
   if n==1 and _menu.alt == false then
@@ -145,7 +158,25 @@ _norns.key = function(n, z)
     else
       _menu.key(n,z) -- always 1,1
     end
-    -- key 2/3 pass
+  elseif n == 4 then
+    if z == 1 then
+      _menu.alt = true
+      pending = true
+      t:start()
+    elseif z == 0 and pending == true then
+      _menu.alt = false
+      if _menu.paramMode == true and _menu.locked == false then
+        _menu.set_param_mode(false)
+      else _menu.set_param_mode(true) end
+      t:stop()
+      pending = false
+    elseif z == 0 then
+      _menu.alt = false
+      _menu.key(n,z) -- always 1,0
+      if _menu.paramMode == true then _menu.redraw() end
+    else
+      _menu.key(n,z) -- always 1,1
+    end
   else
     _menu.key(n,z)
   end
@@ -161,7 +192,6 @@ _menu.set_mode = function(mode)
     screen.clear()
     screen.update()
     redraw = norns.script.redraw
-    refresh = norns.script.refresh
     _menu.key = key
     norns.encoders.callback = enc
     norns.enc.resume()
@@ -171,13 +201,12 @@ _menu.set_mode = function(mode)
     _menu.mode = true
     _menu.alt = false
     redraw = norns.none
-    refresh = norns.none
     screen.font_face(1)
     screen.font_size(8)
     screen.line_width(1)
     norns.encoders.callback = _menu.enc
     norns.encoders.set_accel(1,false)
-    norns.encoders.set_sens(1,8)
+    norns.encoders.set_sens(1,2)
     norns.encoders.set_accel(2,false)
     norns.encoders.set_sens(2,2)
     norns.encoders.set_accel(3,true)
@@ -186,6 +215,40 @@ _menu.set_mode = function(mode)
   end
 end
 
+_menu.set_param_mode = function(mode)
+  if mode == false then -- ACTIVATE PLAY MODE
+    if _menu.paramMode == true then _norns.screen_restore() end
+    _menu.paramMode = false
+    m[_menu.page].deinit()
+    screen.clear()
+    screen.update()
+    redraw = norns.script.redraw
+    _menu.key = key
+    norns.encoders.callback = enc
+    norns.enc.resume()
+    redraw()
+  elseif mode == true then -- ACTIVATE MENu MODE
+    if _menu.paramMode == false then _norns.screen_save() end
+    _menu.paramMode = true
+    _menu.alt = false
+    redraw = norns.none
+    screen.font_face(1)
+    screen.font_size(8)
+    screen.line_width(1)
+    norns.encoders.callback = _menu.enc
+    norns.encoders.set_accel(1,false)
+    norns.encoders.set_sens(1,2)
+    norns.encoders.set_accel(2,false)
+    norns.encoders.set_sens(2,2)
+    norns.encoders.set_accel(3,true)
+    norns.encoders.set_sens(3,2)
+    _menu.set_page(("PARAMS"))
+  end
+end
+
+
+
+
 -- set page
 _menu.set_page = function(page)
   m[_menu.page].deinit()
@@ -193,7 +256,7 @@ _menu.set_page = function(page)
   _menu.key = m[page].key
   _menu.penc = m[page].enc
   _menu.redraw = m[page].redraw
-  _menu.refresh = m[page].refresh
+  _menu.touch = m[page].touch
   _menu.keyboardcode = m[page].keycode
   _menu.keyboardchar = m[page].keychar
   _menu.custom_gamepad_axis = m[page].gamepad_axis
@@ -333,7 +396,6 @@ m["SELECT"] = require 'core/menu/select'
 m["PREVIEW"] = require 'core/menu/preview'
 m["PARAMS"] = require 'core/menu/params'
 m["SYSTEM"] = require 'core/menu/system'
-m["DISPLAY"] = require 'core/menu/display'
 m["DEVICES"] = require 'core/menu/devices'
 m["WIFI"] = require 'core/menu/wifi'
 m["SETTINGS"] = require 'core/menu/settings'

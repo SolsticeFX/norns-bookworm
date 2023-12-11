@@ -25,6 +25,8 @@ _norns.key = function(n,z) end
 -- enc callback
 _norns.enc = function(n,delta) end
 
+_norns.touch = function(finger,press,x,y) end
+
 -- grid device callbacks.
 _norns.grid = {}
 _norns.grid.key = function(id, x, y, val) end
@@ -129,6 +131,7 @@ end
 norns.script = require 'core/script'
 norns.state = require 'core/state'
 norns.encoders = require 'core/encoders'
+norns.touchscreen =  require 'core/touchscreen'
 
 _norns.enc = norns.encoders.process
 
@@ -240,20 +243,6 @@ _norns.reset = function()
   os.execute("sudo systemctl restart norns-sclang.service")
   os.execute("sudo systemctl restart norns-crone.service")
   os.execute("sudo systemctl restart norns-matron.service")
-end
-
--- restart device
-_norns.restart = function()
-  hook.system_pre_shutdown()
-  print("RESTARTING")
-  norns.script.clear()
-  _norns.free_engine()
-  norns.state.clean_shutdown = true
-  norns.state.save()
-  pcall(cleanup)
-  audio.level_dac(0)
-  audio.headphone_gain(0)
-  _norns.reset()
 end
 
 -- startup function will be run after I/O subsystems are initialized,
