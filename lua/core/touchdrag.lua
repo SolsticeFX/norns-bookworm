@@ -11,9 +11,8 @@ local now = util.time()
 touchdrag.callback = norns.none
 
 
-touchdrag.process = function(x,y,start_x,start_y,last_x,last_y)
-
-screen.ping()
-  end
+touchdrag.process = function(gx ,gy, start_x, start_y, last_x, last_y)
+  touchdrag.callback(gx ,gy, start_x, start_y, last_x, last_y)
+end
 
 return touchdrag

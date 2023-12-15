@@ -31,7 +31,7 @@ local m = {
 }
 
 local page
-local mode_item = { "EDIT >", "PSET >", "MAP >"}
+local mode_item = { "EDIT", "PRESETS", "MAP"}
 local pset = {}
 
 -- called from menu on script reset
@@ -304,6 +304,37 @@ m.newtext = function(txt)
   end
 end
 
+
+
+m.tap = function(x,y)
+   -- MODE MENU
+   if m.mode == mSELECT then
+  if y >= 180 and y < 240 then
+    if(m.mode_pos==1) then
+      m.mode = mEDIT
+      build_page()
+    else
+      m.mode_pos = util.clamp(1, 1, 3)
+    end
+  elseif y >= 240 and y < 290 then
+    if(m.mode_pos==2) then
+      init_pset()
+      m.mode = mPSET
+    else
+      m.mode_pos = util.clamp(2, 1, 3)
+    end
+  elseif y >= 290 and y < 360 then
+    if(m.mode_pos==3) then
+      m.mode = mMAP
+      build_page()
+    else
+      m.mode_pos = util.clamp(3, 1, 3)
+    end
+  end
+  _menu.redraw()
+end
+end
+
 m.enc = function(n,d)
   -- MODE MENU
   if m.mode == mSELECT then
@@ -434,9 +465,16 @@ m.redraw = function()
     screen.move(0,10)
     screen.text("PARAMETERS")
     for i=1,3 do
-      if i==m.mode_pos then screen.level(15) else screen.level(4) end
-      screen.move(0,10*i+20)
+      if i==m.mode_pos then 
+        screen.rgblevel(15,0,0) 
+      else screen.level(4) 
+      end
+      screen.move(0,10*i+25)
       screen.text(mode_item[i])
+      if i==m.mode_pos then 
+        screen.rgblevel(0,15,0)  
+        screen.text(" >")
+      end
     end
   -- EDIT
   elseif m.mode == mEDIT then

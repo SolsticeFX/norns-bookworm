@@ -14,7 +14,5 @@ touchtap.process = function(gx ,gy)
   touchtap.callback(gx,gy)
 end
 
-
-
-
 return touchtap
+

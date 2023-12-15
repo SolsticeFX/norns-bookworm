@@ -30,6 +30,43 @@ m.key = function(n,z)
   end
 end
 
+
+
+m.tap = function(x,y)
+  if y >= 180 and y < 240 then
+    if(m.pos==1) then
+      _menu.set_page(m.list[m.pos])
+    else
+      m.pos = util.clamp(1, 1, #m.list)
+    end
+  elseif y >= 240 and y < 290 then
+    if(m.pos==2) then
+      _menu.set_page(m.list[m.pos])
+    else
+      m.pos = util.clamp(2, 1, #m.list)
+    end
+  elseif y >= 290 and y < 360 then
+    if(m.pos==3) then
+      _menu.set_page(m.list[m.pos])
+    else
+      m.pos = util.clamp(3, 1, #m.list)
+    end
+  end
+  _menu.redraw()
+end
+
+m.drag = function (x,y,sx,sy,lx,ly)
+  if y >= 180 and y < 240 then
+    m.pos = util.clamp(1, 1, #m.list)
+  elseif y >= 240 and y < 290 then
+    m.pos = util.clamp(2, 1, #m.list)
+  elseif y >= 290 and y < 360 then
+    m.pos = util.clamp(3, 1, #m.list)
+  end
+    _menu.redraw()
+end
+
+
 m.enc = function(n,delta)
   if n == 2 then
     m.pos = util.clamp(m.pos + delta, 1, #m.list)
@@ -97,10 +134,11 @@ m.redraw = function()
     screen.text(m.list[i])
     if(i==m.pos) then
       screen.rgblevel(0,15,0)
+      screen.text(" >")
     else
       screen.level(4)
     end 
-  screen.text(" >")
+  
   end
 
   if not _menu.showstats then

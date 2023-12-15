@@ -76,19 +76,19 @@ norns.menu.set = function(new_enc, new_key, new_redraw, new_touch, new_press, ne
   _menu.penc = new_enc
   _menu.key = new_key
   _menu.redraw = new_redraw
-  _menu.touch = new_touch
-  _menu.press = new_press
-  _menu.release = new_release
-  _menu.tap = new_tap
-  _menu.drag = new_drag
+  _menu.ptouch = new_touch
+  _menu.ppress = new_press
+  _menu.prelease = new_release
+  _menu.ptap = new_tap
+  _menu.pdrag = new_drag
 end
 norns.menu.get_enc = function() return _menu.penc end
 norns.menu.get_key = function() return _menu.key end
-norns.menu.get_touch = function() return _menu.touch end
-norns.menu.get_press = function() return _menu.press end
-norns.menu.get_release = function() return _menu.release end
-norns.menu.get_tap = function() return _menu.tap end
-norns.menu.get_drag = function() return _menu.drag end
+norns.menu.get_touch = function() return _menu.ptouch end
+norns.menu.get_press = function() return _menu.ppress end
+norns.menu.get_release = function() return _menu.prelease end
+norns.menu.get_tap = function() return _menu.ptap end
+norns.menu.get_drag = function() return _menu.pdrag end
 norns.menu.get_redraw = function() return _menu.redraw end
 norns.menu.toggle = function(status) _menu.set_mode(status) end
 
@@ -126,22 +126,28 @@ end
 -- input redirection
 --TODO: redo with new UI widgets
 
-_norns.release = function(x, y)
-  print("x: "..x)
-  if x>400 then
- _menu.key(3,1)
-  elseif x<400 then
-    _menu.key(2,1)
+_norns.drag = function(gx,gy,start_x,start_y,last_x,last_y)
+if(start_y<70) then
+  local c = util.clamp(math.floor(gx/200)+1,1,4)
+  if c ~= _menu.panel then
+    _menu.panel = c
+    _menu.set_page(_menu.panels[_menu.panel])
   end
+
+else _menu.pdrag(gx,gy,start_x,start_y,last_x,last_y) end
+
 end
 
-_norns.tap = function( x, y)
-  print("tx: "..x)
-  if x>400 then
- _menu.key(3,1)
-  elseif x<400 then
-    _menu.key(2,1)
-  end
+_norns.release = function(x,y) end
+
+_norns.tap = function( gx, gy)
+  if(gy<70) then
+    local c = util.clamp(math.floor(gx/200)+1,1,4)
+    if c ~= _menu.panel then
+      _menu.panel = c
+      _menu.set_page(_menu.panels[_menu.panel])
+    end
+  else _menu.ptap(gx,gy) end
   end
 
 _menu.enc = function(n, delta)
@@ -215,6 +221,8 @@ _menu.set_mode = function(mode)
     redraw = norns.script.redraw
     _menu.key = key
     norns.encoders.callback = enc
+   
+
     norns.enc.resume()
     redraw()
   elseif mode == true then -- ACTIVATE MENu MODE
@@ -277,11 +285,11 @@ _menu.set_page = function(page)
   _menu.key = m[page].key
   _menu.penc = m[page].enc
   _menu.redraw = m[page].redraw
-  _menu.touch = m[page].touch
-  _menu.press = m[page].press
-  _menu.release = m[page].release
-  _menu.tap = m[page].tap
-  _menu.drag = m[page].drag
+  _menu.ptouch = m[page].touch
+  _menu.ppress = m[page].press
+  _menu.prelease = m[page].release
+  _menu.ptap = m[page].tap
+  _menu.pdrag = m[page].drag
   _menu.keyboardcode = m[page].keycode
   _menu.keyboardchar = m[page].keychar
   _menu.custom_gamepad_axis = m[page].gamepad_axis
@@ -294,16 +302,18 @@ end
 
 -- draw panel indicator
 function _menu.draw_panel()
-  if _menu.shownav then
+  --if _menu.shownav then
     screen.aa(1)
-    screen.line_width(1)
+    screen.line_width(4)
     for i = 1,4 do
-      screen.level(i == _menu.panel and 8 or 2)
+      screen.rgblevel(i == _menu.panel and 15 or 7,i == _menu.panel and 15 or 7,i == _menu.panel and 0 or 4)
       screen.move((i-1)*33,0)
       screen.line_rel(30,0)
       screen.stroke()
     end
-  end
+    screen.line_width(1)
+
+  --end
 end
 
 -- global menu keys
