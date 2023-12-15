@@ -54,6 +54,12 @@ Script.clear = function()
   key = norns.none
   enc = norns.none
   touch = norns.none
+  press = norns.none
+  release = norns.none
+  tap = norns.none
+  drag = norns.none
+
+  
 
   -- reset encoders
   norns.enc.accel(0,true)

@@ -28,6 +28,10 @@ typedef enum {
 
     // Touchscreen event
     EVENT_TOUCH,
+    EVENT_PRESS,
+    EVENT_RELEASE,
+    EVENT_TAP,
+    EVENT_DRAG,
     
     
     
@@ -262,10 +266,42 @@ struct event_enc {
 
 struct event_touch {
     struct event_common common;
-    uint8_t finger;
+    uint8_t slot;
     uint8_t press;
     uint32_t x;
     uint32_t y;
+
+}; // +2
+
+struct event_press {
+    struct event_common common;
+    uint32_t x;
+    uint32_t y;
+
+}; // +2
+
+struct event_release {
+    struct event_common common;
+    uint32_t x;
+    uint32_t y;
+
+}; // +2
+
+struct event_tap {
+    struct event_common common;
+    uint32_t x;
+    uint32_t y;
+
+}; // +2
+
+struct event_drag {
+    struct event_common common;
+    uint32_t x;
+    uint32_t y;
+    uint32_t start_x;
+    uint32_t start_y;
+    uint32_t last_x;
+    uint32_t last_y;
 
 }; // +2
 
@@ -374,6 +410,10 @@ union event_data {
     struct event_key key;
     struct event_enc enc;
     struct event_touch touch;
+    struct event_press press;
+    struct event_release release;
+    struct event_tap tap;
+    struct event_drag drag;
     struct event_battery battery;
     struct event_power power;
     struct event_stat stat;

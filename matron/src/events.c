@@ -209,7 +209,19 @@ static void handle_event(union event_data *ev) {
         w_handle_enc(ev->enc.n, ev->enc.delta);
         break;
     case EVENT_TOUCH:
-        w_handle_touch(ev->touch.finger, ev->touch.press, ev->touch.x, ev->touch.y);
+        w_handle_touch(ev->touch.slot, ev->touch.press, ev->touch.x, ev->touch.y);
+        break;
+    case EVENT_PRESS:
+        w_handle_press(ev->press.x, ev->press.y);
+        break;
+    case EVENT_RELEASE:
+        w_handle_release(ev->release.x, ev->release.y);
+        break;
+    case EVENT_TAP:
+        w_handle_tap(ev->tap.x, ev->tap.y);
+        break;
+    case EVENT_DRAG:
+        w_handle_drag(ev->drag.x, ev->drag.y,ev->drag.start_x, ev->drag.start_y,ev->drag.last_x, ev->drag.last_y);
         break;
     case EVENT_BATTERY:
         w_handle_battery(ev->battery.percent, ev->battery.current);

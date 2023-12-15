@@ -25,7 +25,12 @@ _norns.key = function(n,z) end
 -- enc callback
 _norns.enc = function(n,delta) end
 
-_norns.touch = function(finger,press,x,y) end
+_norns.touch = function(slot,press,x,y) end
+_norns.press = function(x,y) end
+_norns.release= function(x,y) end
+_norns.tap = function(x,y) end
+_norns.drag = function(x,y, start_x, start_y, last_x, last_y) end
+
 
 -- grid device callbacks.
 _norns.grid = {}
@@ -130,10 +135,20 @@ end
 -- management
 norns.script = require 'core/script'
 norns.state = require 'core/state'
-norns.encoders = require 'core/encoders'
+norns.encoders = require 'core/encoders' 
 norns.touchscreen =  require 'core/touchscreen'
+norns.touchpress =  require 'core/touchpress'
+norns.touchrelease =  require 'core/touchrelease'
+norns.touchtap =  require 'core/touchtap'
+norns.touchdrag =  require 'core/touchdrag'
+
+
 
 _norns.enc = norns.encoders.process
+_norns.press = norns.touchpress.process
+_norns.release = norns.touchrelease.process
+_norns.tap = norns.touchtap.process
+_norns.drag = norns.touchdrag.process
 
 -- extend paths config table
 local p = _path

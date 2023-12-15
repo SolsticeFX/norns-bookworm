@@ -27,13 +27,17 @@ typedef struct _enc_gpio_priv {
 } enc_gpio_priv_t;
 
 struct touch_input {
-    uint8_t finger;
+    uint8_t slot;
     uint8_t press;
-    uint32_t x;
-    uint32_t y;
+    int32_t x;
+    int32_t y;
+    int32_t start_x;
+    int32_t start_y;
+    int32_t last_x;
+    int32_t last_y;
 }; 
 
-struct touch_input tinput = {0, 0, 0, 0};
+struct touch_input tinput = {0, 0, 0, 0, 0, 0, 0, 0};
 
 
 static int input_gpio_config(matron_io_t* io, lua_State *l);
@@ -195,8 +199,7 @@ void* key_gpio_poll(void* data) {
         }
 
         for (i = 0; i < rd / sizeof(struct input_event); i++) {
-            if (event[i].type) { // make sure it's not EV_SYN == 0
-                // fprintf(stderr, "enc%d = %d\n", n, event[i].value);
+            if (event[i].type) { 
                 union event_data *ev = event_data_new(EVENT_KEY);
                 ev->key.n = event[i].code;
                 ev->key.val = event[i].value;
@@ -230,7 +233,6 @@ void* touch_dsi_poll(void* data) {
                 tinput.press = event[i].value;
                 }
                 else if (event[i].code==330 && event[i].value==0) {
-                //fprintf(stderr, "RELEASE\n");
                 tinput.press = event[i].value;
                 }
                 else if (event[i].code==0) { 
@@ -242,16 +244,20 @@ void* touch_dsi_poll(void* data) {
                 //tinput.y = event[i].value;
                 }
                 else if (event[i].code==47) {
-                //fprintf(stderr, "Finger = %d\n", event[i].value);
-                tinput.finger = event[i].value;
+                //fprintf(stderr, "slot = %d\n", event[i].value);
+                tinput.slot = event[i].value;
                 }
                 else if (event[i].code==53) {
                 //fprintf(stderr, "ABS MT POS X = %d\n", event[i].value);
+        
                 tinput.x = event[i].value;
+
                 }
                 else if (event[i].code==54) {
                 //fprintf(stderr, "ABS MT POS Y = %d\n", event[i].value);
+
                 tinput.y = event[i].value;
+                
                 }
                 
                 else {
@@ -265,20 +271,78 @@ void* touch_dsi_poll(void* data) {
 
 
             else {
-                fprintf(stderr, "x: %d", tinput.x);
-                fprintf(stderr, "-------------- SYN_REPORT ------------\n");
+               // fprintf(stderr, "x: %d", tinput.x);
+ //               fprintf(stderr, "-------------- SYN_REPORT ------------\n");
 
-                union event_data *ev = event_data_new(EVENT_TOUCH);
-                ev->touch.finger = tinput.finger;
+                if(tinput.press==1){
+                    if(tinput.last_x&&tinput.last_y){
+                    //DRAG
+                    union event_data *evdrag = event_data_new(EVENT_DRAG);
+                        evdrag->drag.start_x = tinput.start_x;
+                        evdrag->drag.start_y = tinput.start_y;
+                        evdrag->drag.last_x = tinput.last_x;
+                        evdrag->drag.last_y = tinput.last_y;
+                        evdrag->drag.x = tinput.x;
+                        evdrag->drag.y = tinput.y;
+                        event_post(evdrag);
+                    }
+                    else {
+                    //PRESS
+                    tinput.start_x = tinput.x;
+                    tinput.start_y = tinput.y;
+                        union event_data *evpress = event_data_new(EVENT_PRESS);
+                        evpress->press.x = tinput.x;
+                        evpress->press.y = tinput.y;
+                        event_post(evpress);
+
+                        tinput.start_x = tinput.x;
+                        tinput.last_x = tinput.x;
+                        tinput.start_y = tinput.y;
+                        tinput.last_y = tinput.y;
+                    }
+
+
+                }
+
+
+
+                else{
+                    //TAP
+                    if(abs(tinput.start_x-tinput.x)<50 && abs(tinput.start_y-tinput.y)<50) {
+                        union event_data *evtap = event_data_new(EVENT_TAP);
+
+                        evtap->tap.x = tinput.last_x;
+                        evtap->tap.y = tinput.last_y;
+        
+                        event_post(evtap);
+
+                    }
+                    else {
+                    //RELEASE
+                        union event_data *evrelease = event_data_new(EVENT_RELEASE);
+                        evrelease->release.x = tinput.last_x;
+                        evrelease->release.y = tinput.last_y;
+                        event_post(evrelease);
+
+
+
+                    }
+                    
+                tinput.start_x = 0;
+                tinput.start_y = 0;
+                tinput.press = 0;
+                tinput.x = 0;
+                tinput.y = 0;
+                }
+
+                /*union event_data *ev = event_data_new(EVENT_TOUCH);
+                ev->touch.slot = tinput.slot;
                 ev->touch.press = tinput.press;
                 ev->touch.x = tinput.x;
                 ev->touch.y = tinput.y;
-                
-                event_post(ev);
-
-            
-                
-                
+                event_post(ev);*/
+                tinput.last_x = tinput.x;
+                tinput.last_y = tinput.y;    
             }
         }
     }

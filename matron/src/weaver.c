@@ -2402,16 +2402,61 @@ void w_handle_key(const int n, const int val) {
 }
 
 // touch handler
-void w_handle_touch(const int finger, const int press, const uint32_t x, const uint32_t y) {
+void w_handle_touch(const int slot, const int press, const uint32_t x, const uint32_t y) {
     lua_getglobal(lvm, "_norns");
     lua_getfield(lvm, -1, "touch");
     lua_remove(lvm, -2);
-    lua_pushinteger(lvm, finger);
+    lua_pushinteger(lvm, slot);
     lua_pushinteger(lvm, press);
     lua_pushinteger(lvm, x);
     lua_pushinteger(lvm, y);
     l_report(lvm, l_docall(lvm, 4, 0));
 }
+
+// press handler
+void w_handle_press(const uint32_t x, const uint32_t y) {
+    lua_getglobal(lvm, "_norns");
+    lua_getfield(lvm, -1, "press");
+    lua_remove(lvm, -2);
+    lua_pushinteger(lvm, x);
+    lua_pushinteger(lvm, y);
+    l_report(lvm, l_docall(lvm, 2, 0));
+}
+
+// release handler
+void w_handle_release(const uint32_t x, const uint32_t y) {
+    lua_getglobal(lvm, "_norns");
+    lua_getfield(lvm, -1, "release");
+    lua_remove(lvm, -2);
+    lua_pushinteger(lvm, x);
+    lua_pushinteger(lvm, y);
+    l_report(lvm, l_docall(lvm, 2, 0));
+}
+
+// press handler
+void w_handle_tap(const uint32_t x, const uint32_t y) {
+    lua_getglobal(lvm, "_norns");
+    lua_getfield(lvm, -1, "tap");
+    lua_remove(lvm, -2);
+    lua_pushinteger(lvm, x);
+    lua_pushinteger(lvm, y);
+    l_report(lvm, l_docall(lvm, 2, 0));
+}
+
+// drag handler
+void w_handle_drag(const uint32_t x, const uint32_t y, const uint32_t start_x, const uint32_t start_y, const uint32_t last_x, const uint32_t last_y) {
+    lua_getglobal(lvm, "_norns");
+    lua_getfield(lvm, -1, "drag");
+    lua_remove(lvm, -2);
+    lua_pushinteger(lvm, x);
+    lua_pushinteger(lvm, y);
+    lua_pushinteger(lvm, start_x);
+    lua_pushinteger(lvm, start_y);
+    lua_pushinteger(lvm, last_x);
+    lua_pushinteger(lvm, last_y);
+    l_report(lvm, l_docall(lvm, 6, 0));
+}
+
 
 // gpio handler
 void w_handle_enc(const int n, const int delta) {

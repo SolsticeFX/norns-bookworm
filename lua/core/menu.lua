@@ -14,6 +14,10 @@ _menu = {}
 key = norns.none
 enc = norns.none
 touch = norns.none
+press = norns.none
+release = norns.none
+tap = norns.none
+drag = norns.none
 redraw = norns.blank
 cleanup = norns.none
 
@@ -68,15 +72,23 @@ end
 norns.menu = {}
 norns.menu.init = function() _menu.set_mode(_menu.mode) end -- used by fileselect.lua
 norns.menu.status = function() return _menu.mode end
-norns.menu.set = function(new_enc, new_key, new_redraw, new_touch)
+norns.menu.set = function(new_enc, new_key, new_redraw, new_touch, new_press, new_release, new_tap, new_drag)
   _menu.penc = new_enc
   _menu.key = new_key
   _menu.redraw = new_redraw
   _menu.touch = new_touch
+  _menu.press = new_press
+  _menu.release = new_release
+  _menu.tap = new_tap
+  _menu.drag = new_drag
 end
 norns.menu.get_enc = function() return _menu.penc end
 norns.menu.get_key = function() return _menu.key end
 norns.menu.get_touch = function() return _menu.touch end
+norns.menu.get_press = function() return _menu.press end
+norns.menu.get_release = function() return _menu.release end
+norns.menu.get_tap = function() return _menu.tap end
+norns.menu.get_drag = function() return _menu.drag end
 norns.menu.get_redraw = function() return _menu.redraw end
 norns.menu.toggle = function(status) _menu.set_mode(status) end
 
@@ -114,14 +126,23 @@ end
 -- input redirection
 --TODO: redo with new UI widgets
 
-_norns.touch = function(finger, press, x, y)
+_norns.release = function(x, y)
   print("x: "..x)
-  if press==0 and x>400 then
+  if x>400 then
  _menu.key(3,1)
-  elseif press == 0 and x<400 then
+  elseif x<400 then
     _menu.key(2,1)
   end
 end
+
+_norns.tap = function( x, y)
+  print("tx: "..x)
+  if x>400 then
+ _menu.key(3,1)
+  elseif x<400 then
+    _menu.key(2,1)
+  end
+  end
 
 _menu.enc = function(n, delta)
   if n==1 and _menu.alt == false then
@@ -257,6 +278,10 @@ _menu.set_page = function(page)
   _menu.penc = m[page].enc
   _menu.redraw = m[page].redraw
   _menu.touch = m[page].touch
+  _menu.press = m[page].press
+  _menu.release = m[page].release
+  _menu.tap = m[page].tap
+  _menu.drag = m[page].drag
   _menu.keyboardcode = m[page].keycode
   _menu.keyboardchar = m[page].keychar
   _menu.custom_gamepad_axis = m[page].gamepad_axis

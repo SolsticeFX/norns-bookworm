@@ -64,7 +64,12 @@ extern void w_handle_key(const int n, const int val);
 extern void w_handle_enc(const int n, const int delta);
 
 //--- touch handler 
-extern void w_handle_touch(const int finger, const int press, const uint32_t x, const uint32_t y);
+extern void w_handle_touch(const int slot, const int press, const uint32_t x, const uint32_t y);
+extern void w_handle_press(const uint32_t x, const uint32_t y);
+extern void w_handle_release(const uint32_t x, const uint32_t y);
+extern void w_handle_tap(const uint32_t x, const uint32_t y);
+extern void w_handle_drag(const uint32_t x, const uint32_t y, const uint32_t start_x, const uint32_t start_y, const uint32_t last_x, const uint32_t last_y);
+
 
 //--- system/battery
 extern void w_handle_battery(const int percent, const int current);
