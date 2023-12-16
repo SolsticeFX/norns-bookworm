@@ -45,8 +45,15 @@ m.drag = function(x,y,sx,sy,lx,ly)
 local ssx = util.clamp(sx - 57, 1, 800) 
 local ssy = util.clamp(y/7.5, 8.5, 42.5) 
 local sssy = (ssy-8.5)/34
-print(ssy, sssy)
   --params:delta(paramslist[(math.ceil(ssx*7/800))],(ly-y)/7.5)
+  params:set_raw(paramslist[(math.ceil(ssx*7/800))],(1-(sssy))*1.1)
+  _menu.redraw()
+end
+
+m.tap = function (x,y)
+local ssx = util.clamp(x - 57, 1, 800) 
+local ssy = util.clamp(y/7.5, 8.5, 42.5) 
+local sssy = (ssy-8.5)/34
   params:set_raw(paramslist[(math.ceil(ssx*7/800))],(1-(sssy))*1.1)
   _menu.redraw()
 end
