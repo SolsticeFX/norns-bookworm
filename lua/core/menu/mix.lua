@@ -2,6 +2,22 @@ local m = {
   sel = 1
 }
 
+local scx = 128
+local labels = {"output", "input", "monitor", "engine", "softcut", "tape"}
+local paramslist = {"output_level", "input_level", "monitor_level", "engine_level", "softcut_level", "tape_level"}
+local paramvals = {0,0,0,0,0,0}
+
+local bigmarkerwidth = 10
+local markerwidth = 4
+local linesabove = 5
+local linesbelow = 15
+
+
+
+
+
+
+
 m.key = function(n,z)
   if n==2 and z==1 and m.sel > 1 then
     m.sel = m.sel - 1
@@ -16,109 +32,117 @@ m.enc = function(n,d)
 
   if n==2 then
     params:delta(ch1[m.sel],d)
+    --paramvals[2*(m.sel)-1] = (string.format("%." .. (2 or 0) .. "f", params:get(paramslist[2*(m.sel)-1])).." dB")
   elseif n==3 then
     params:delta(ch2[m.sel],d)
+    --paramvals[2*(m.sel)] = (string.format("%." .. (2 or 0) .. "f", params:get(paramslist[2*(m.sel)])).." dB")
   end
+  _menu.redraw()
 end
 
-m.gamepad_axis = function (_sensor_axis,_value)
-  if gamepad.left() then
-    _menu.key(2,1)
-  elseif gamepad.right() then
-    _menu.key(3,1)
-  elseif gamepad.down() then
-    _menu.penc(2,-1)
-  elseif gamepad.up() then
-    _menu.penc(2,1)
-  end
+m.drag = function(x,y,sx,sy,lx,ly)
+
+local ssx = util.clamp(sx - 57, 1, 800) 
+  params:delta(paramslist[(math.ceil(ssx*7/800))],(ly-y)/7.5)
+  _menu.redraw()
 end
 
-m.gamepad_button = function(b,value)
-  if b == "B" then
-    _menu.penc(3,-1)
-  elseif b == "A" then
-    _menu.penc(3,1)
-  end
-end
 
 m.redraw = function()
   local n
   screen.clear()
   screen.aa(1)
-  screen.line_width(1)
   _menu.draw_panel()
+  screen.line_width(0.5)
 
-  screen.level(1)
-  for i=1,6 do
-    screen.move((i-1)*22,21.5)
-    screen.line_rel(7,0)
-    screen.stroke()
-  end
 
-  local x = -40
-  screen.level(2)
-  n = params:get_raw("output_level")*48
-  screen.rect(x+42.5,55.5,2,-n)
+  screen.level(12)
+  n = m.in1/64*48
+  screen.rect(128*2/7 - 8,55.5,2,-n)
   screen.stroke()
 
-  screen.level(15)
+  n = m.in2/64*48
+  screen.rect(128*2/7 -10,55.5,2,-n)
+  screen.stroke()
+
   n = m.out1/64*48
-  screen.rect(x+48.5,55.5,2,-n)
+  screen.rect(128/7 -8 ,55.5,2,-n)
   screen.stroke()
 
   n = m.out2/64*48
-  screen.rect(x+54.5,55.5,2,-n)
+  screen.rect(128/7 -10,55.5,2,-n)
   screen.stroke()
 
-  screen.level(2)
+
+  for i=1,6 do
+    local x = 128*i/7
+
+    screen.level(6)
+    for j=1,linesbelow do
+      screen.move((x-markerwidth/2 ), (21.5 +(j*34/linesbelow)))
+      screen.line_rel(markerwidth,0)
+      screen.stroke()
+    end
+
+    for j=1,linesabove do
+      screen.move((x-markerwidth/2), (21.5 -(j*34/linesbelow)))
+      screen.line_rel(markerwidth,0)
+      screen.stroke()
+    end
+
+    screen.level(15)
+    screen.move(x-bigmarkerwidth/2 ,21.5)
+    screen.line_rel(bigmarkerwidth,0)
+    screen.stroke()
+    
+    screen.font_size(4)
+    screen.move(x,63)
+    screen.text_center(labels[i])
+    screen.font_size(3)
+    screen.move(x,69)
+   screen.text_center((string.format("%." .. (2 or 0) .. "f", params:get(paramslist[i])).." dB"))
+  end
+
+
+  n = params:get_raw("output_level")*48
+  --screen.rect(128/7,55.5,2,-n)
+  screen.rgblevel(6,7,8)
+  screen.rect(128/7-(bigmarkerwidth/2),55.5-n,10,5)
+  screen.fill()
+
+
   n = params:get_raw("input_level")*48
-  screen.rect(x+64.5,55.5,2,-n)
-  screen.stroke()
+  screen.rgblevel(7,6,8)
+  screen.rect(128*2/7-(bigmarkerwidth/2),55.5-n,10,5)
+  screen.fill()
+  --screen.stroke()
 
-  screen.level(15)
-  n = m.in1/64*48
-  screen.rect(x+70.5,55.5,2,-n)
-  screen.stroke()
-  n = m.in2/64*48
-  screen.rect(x+76.5,55.5,2,-n)
-  screen.stroke()
 
-  screen.level(2)
   n = params:get_raw("monitor_level")*48
-  screen.rect(x+86.5,55.5,2,-n)
-  screen.stroke()
+  screen.rgblevel(8,7,6)
+  screen.rect(128*3/7-(bigmarkerwidth/2),55.5-n,10,5)
+  screen.fill()
+  --screen.stroke()
 
-  screen.level(2)
   n = params:get_raw("engine_level")*48
-  screen.rect(x+108.5,55.5,2,-n)
-  screen.stroke()
+  screen.rgblevel(7,8,6)
+  screen.rect(128*4/7-(bigmarkerwidth/2),55.5-n,10,5)
+  screen.fill()
 
-  screen.level(2)
   n = params:get_raw("softcut_level")*48
-  screen.rect(x+130.5,55.5,2,-n)
-  screen.stroke()
+  screen.rgblevel(6,8,7)
+  screen.rect(128*5/7-(bigmarkerwidth/2),55.5-n,10,5)
+  screen.fill()
 
-  screen.level(2)
   n = params:get_raw("tape_level")*48
-  screen.rect(x+152.5,55.5,2,-n)
-  screen.stroke()
+  screen.rgblevel(8,6,7)
+  screen.rect(128*6/7-(bigmarkerwidth/2),55.5-n,10,5)
+  screen.fill()
+--
 
-  screen.level(m.sel==1 and 15 or 1)
-  screen.move(2,63)
-  screen.text("out")
-  screen.move(24,63)
-  screen.text("in")
-  screen.level(m.sel==2 and 15 or 1)
-  screen.move(46,63)
-  screen.text("mon")
-  screen.move(68,63)
-  screen.text("eng")
-  screen.level(m.sel==3 and 15 or 1)
-  screen.move(90,63)
-  screen.text("cut")
-  screen.move(112,63)
-  screen.text("tp")
-
+screen.level(15)
+  screen.line_width(1)
+  screen.font_size(8)
   screen.update()
 end
 
@@ -128,6 +152,12 @@ m.init = function()
   m.in2 = 0
   m.out1 = 0
   m.out2 = 0
+
+  for i=1,6 do
+  paramvals[i] = (string.format("%." .. (2 or 0) .. "f", params:get(paramslist[i])).." dB")
+  
+  end
+
   norns.encoders.set_accel(2,true)
   norns.encoders.set_sens(2,1)
   norns.encoders.set_sens(3,1)

@@ -18,6 +18,8 @@ _G.last_x = 0
 _G.last_y = 0 
 _G.touch_resolution_x = 800
 _G.touch_resolution_y = 480
+_G.screen_resolution_x = 128
+_G.screen_resolution_y = 64
 touchscreen.time = now
 touchscreen.callback = norns.none
 

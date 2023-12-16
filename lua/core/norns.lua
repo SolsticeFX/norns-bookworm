@@ -218,6 +218,8 @@ norns.is_norns = norns.platform == 2
 --- true if we are running on norns shield (PI3)
 norns.is_shield = norns.platform == 3
 
+norns.is_solstice = norns.platform == 4
+
 -- Util (system_cmd)
 local system_cmd_q = {}
 local system_cmd_busy = false
@@ -258,6 +260,20 @@ _norns.reset = function()
   os.execute("sudo systemctl restart norns-sclang.service")
   os.execute("sudo systemctl restart norns-crone.service")
   os.execute("sudo systemctl restart norns-matron.service")
+end
+
+-- restart device
+_norns.restart = function()
+  hook.system_pre_shutdown()
+  print("RESTARTING")
+  norns.script.clear()
+  _norns.free_engine()
+  norns.state.clean_shutdown = true
+  norns.state.save()
+  pcall(cleanup)
+  audio.level_dac(0)
+  audio.headphone_gain(0)
+  _norns.reset()
 end
 
 -- startup function will be run after I/O subsystems are initialized,
