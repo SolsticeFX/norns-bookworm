@@ -9,8 +9,6 @@ local m = {
   alt = false
 }
 
-
-
 local function menu_table_entry(file)
   local p = string.match(file,".*/")
   local n = string.gsub(file,'.lua','/')
@@ -113,19 +111,17 @@ m.tap = function(x,y)
 
 end
 
-
-
 m.drag = function(x,y,sx,sy,lx,ly) 
-listTicker = listTicker - y + ly
-m.pos = util.clamp(math.floor(listTicker*7/(_G.touch_resolution_y)), 0, m.len - 1)
+  listTicker = listTicker - y + ly
+  m.pos = util.clamp(math.floor(listTicker*7/(_G.touch_resolution_y)), 0, m.len - 1)
   _menu.redraw()
 end
-
 
 m.enc = function(n,delta)
   if n==2 then
     delta = not m.alt and delta or delta*6
     m.pos = util.clamp(m.pos + delta, 0, m.len - 1)
+    listTicker = m.pos*(_G.touch_resolution_y/7)
     _menu.redraw()
   elseif n==3 then
     if delta > 0 then
