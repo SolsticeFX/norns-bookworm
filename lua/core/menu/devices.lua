@@ -156,7 +156,11 @@ local function redraw_select(do_show_all_if_fit, do_uppercase)
     for i=1,len do
       local line = m.options[m.section][i]
       if do_uppercase then line = string.upper(line) end
-      screen.level(i==m.pos and 15 or 4)
+      if i==m.pos then
+        screen.rgblevel(15,0,0)
+      else
+        screen.level(4)
+      end
       screen.move(20,10*i)
       screen.text(line)
     end
@@ -165,7 +169,11 @@ local function redraw_select(do_show_all_if_fit, do_uppercase)
       if (i > 2 - m.pos + 1) and (i < m.len - m.pos + 3 + 1) then
         local line = m.options[m.section][i+m.pos-2 - 1]
         if do_uppercase then line = string.upper(line) end
-        screen.level(i==3 and 15 or 4)
+        if(i==3) then
+          screen.rgblevel(15,0,0)
+        else
+          screen.level(4)
+        end
         screen.move(20,10*i)
         screen.text(line)
       end
@@ -200,12 +208,18 @@ m.redraw = function()
   for i=1,m.len do
     screen.move(0,10*i+y_offset)
     if(i==m.pos) then
-      screen.level(15)
+      screen.rgblevel(15,0,0)
     else
       screen.level(4)
     end
     if m.mode == "type" then
-      screen.text(string.upper(m.list[i]) .. " >")
+
+      screen.text(string.upper(m.list[i]))
+      if(i==m.pos) then
+        screen.rgblevel(0,15,0)
+        screen.text(" >")
+      end
+
       if m.list[i] == "keyboard layout" then
         screen.move(127,10*i+y_offset)
         screen.text_right(string.upper(keyboard.selected_map))
@@ -217,9 +231,9 @@ m.redraw = function()
           if m.pos+(j-1) <= m.len then
             local line = m.pos+(j-1)..". "..midi.vports[m.pos+(j-1)].name
             if j == 1 then
-              screen.level(15)
+              screen.rgblevel(15,0,0)
             else
-              screen.level(3)
+              screen.level(4)
             end
             screen.text(line)
           end

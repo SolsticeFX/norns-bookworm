@@ -45,7 +45,7 @@ end
 
 m.redraw = function()
   screen.clear()
-  screen.level(15)
+  screen.rgblevel(15,0,0)
   if m.len == 0 then
     screen.move(64,40)
     screen.text_center("no mods")
@@ -58,11 +58,13 @@ m.redraw = function()
         local line = string.upper(name)
 
         local y = 10*i
-        local line_level = 4
         if i==3 then
-          line_level = 15
+          screen.rgblevel(15,0,0)
+        else
+          screen.level(4)
         end
-        screen.level(line_level)
+
+     
 
         -- loaded indicator
         if loaded then

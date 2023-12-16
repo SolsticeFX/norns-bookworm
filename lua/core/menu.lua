@@ -110,6 +110,7 @@ end
 
 norns.init_done = function(status)
   _menu.set_page("HOME")
+  _menu.set_mode(true)
   _menu.panel = 3
   if status == true then
     _menu.scripterror = false
@@ -127,7 +128,7 @@ end
 --TODO: redo with new UI widgets
 
 _menu.drag = function(gx,gy,start_x,start_y,last_x,last_y)
-print('draggier')
+
 if(start_y<40) and _menu.mode==true then
 
   local c = util.clamp(math.floor(gx/200)+1,1,4)

@@ -3,10 +3,13 @@ local tabutil = require "tabutil"
 local m = {
   pos = 0,
   list = {},
+  listTicker = 0,
   favorites = {},
   len = "scan",
   alt = false
 }
+
+
 
 local function menu_table_entry(file)
   local p = string.match(file,".*/")
@@ -53,6 +56,7 @@ local function contains(list, menu_item)
 end
 
 m.init = function()
+  
   m.len = "scan"
   m.list = {}
   m.favorites = {}
@@ -63,6 +67,7 @@ m.init = function()
   end
   -- weird command, but it is fast, recursive, skips hidden dirs, and sorts
   norns.system_cmd('find ~/dust/code/ -name "*.lua" | sort', sort_select_tree)
+  listTicker = m.pos*(_G.touch_resolution_y/6)
 end
 
 m.deinit = norns.none
@@ -73,6 +78,8 @@ m.key = function(n,z)
     m.alt = z == 1 and true or false
   elseif n==2 and z==1 then
     _menu.set_page("HOME")
+    _menu.mode = true
+
   -- select
   elseif n==3 and z==1 then
     -- return if the current "file" is the split between favorites and all scripts
@@ -94,19 +101,25 @@ m.key = function(n,z)
 end
 
 m.tap = function(x,y)
+  local p = math.floor(y*7/(_G.touch_resolution_y)) - 2
+  if(p == 0) then
+    m.key(3,1)
+  end
 
-  local p = math.floor(y/70)
-  print(y)
-print(p)  
-
-
-
- -- m.pos = util.clamp(m.pos + delta, 0, m.len - 1)
+  m.pos = util.clamp(m.pos + p, 0, m.len - 1)
+  listTicker = m.pos*(_G.touch_resolution_y/7)
+  print(listTicker)
  _menu.redraw()
 
 end
 
 
+
+m.drag = function(x,y,sx,sy,lx,ly) 
+listTicker = listTicker - y + ly
+m.pos = util.clamp(math.floor(listTicker*7/(_G.touch_resolution_y)), 0, m.len - 1)
+  _menu.redraw()
+end
 
 
 m.enc = function(n,delta)

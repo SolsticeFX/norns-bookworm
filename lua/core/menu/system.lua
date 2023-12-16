@@ -1,6 +1,6 @@
 local m = {
   pos = 1,
-  list = {"DEVICES > ", "WIFI >", "MODS >", "SETTINGS >", "RESTART", "UPDATE", "LOG"},
+  list = {"DEVICES", "WIFI", "MODS", "SETTINGS", "RESTART", "UPDATE", "LOG"},
   pages = {"DEVICES", "WIFI", "MODS", "SETTINGS", "RESTART", "UPDATE", "LOG"}
 }
 
@@ -26,11 +26,20 @@ m.redraw = function()
       screen.move(0,10*i)
       local line = m.list[i+m.pos-3]
       if(i==3) then
-        screen.level(15)
+        screen.rgblevel(15,0,0)
+        screen.text(line)
+        screen.rgblevel(0,15,0)
+        screen.text(" >")
+
+
+
       else
         screen.level(4)
+        screen.text(line)
       end
-      screen.text(line)
+      
+
+
     end
   end
   screen.update()
@@ -38,5 +47,6 @@ end
 
 m.init = norns.none
 m.deinit = norns.none
+
 
 return m

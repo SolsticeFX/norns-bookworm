@@ -21,6 +21,8 @@ m.key = function(n,z)
   elseif n == 3 and z == 1 then
     if _menu.alt == false then
       _menu.set_page(m.list[m.pos])
+      _menu.mode = false
+
     else
       norns.script.clear()
       _norns.free_engine()
@@ -35,18 +37,21 @@ end
 m.tap = function(x,y)
   if y >= 180 and y < 240 then
     if(m.pos==1) then
+      _menu.mode = false
       _menu.set_page(m.list[m.pos])
     else
       m.pos = util.clamp(1, 1, #m.list)
     end
   elseif y >= 240 and y < 290 then
     if(m.pos==2) then
+      _menu.mode = false
       _menu.set_page(m.list[m.pos])
     else
       m.pos = util.clamp(2, 1, #m.list)
     end
   elseif y >= 290 and y < 360 then
     if(m.pos==3) then
+      _menu.mode = false
       _menu.set_page(m.list[m.pos])
     else
       m.pos = util.clamp(3, 1, #m.list)
