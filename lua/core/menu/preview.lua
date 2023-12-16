@@ -1,7 +1,8 @@
 local tab = require 'tabutil'
 
 local m = {
-  meta = {}
+  meta = {},
+  scrollTicker = 0
 }
 
 m.init = function()
@@ -12,6 +13,8 @@ m.init = function()
   m.pos = 0
   m.posmax = m.len - 8
   if m.posmax < 0 then m.posmax = 0 end
+  scrollTicker = m.pos*(_G.touch_resolution_y/9)
+
 end
 
 m.deinit = norns.none
@@ -31,8 +34,15 @@ end
 m.enc = function(n,d)
   if n==2 then
     m.pos = util.clamp(m.pos + d, 0, m.posmax)
+    listTicker = m.pos*(_G.touch_resolution_y/9)
     _menu.redraw()
   end
+end
+
+m.drag = function(x,y,sx,sy,lx,ly) 
+  scrollTicker = util.clamp((scrollTicker - y + ly),0,m.posmax*67.5)
+  m.pos = util.clamp(math.floor(scrollTicker/67.5), 0, m.posmax)
+  _menu.redraw()
 end
 
 m.redraw = function()

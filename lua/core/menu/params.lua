@@ -461,8 +461,8 @@ m.redraw = function()
 
   -- SELECT
   if m.mode == mSELECT then
-    screen.level(4)
-    screen.move(0,10)
+    screen.level(15)
+    screen.move(0,15)
     screen.text("PARAMETERS")
     for i=1,3 do
       if i==m.mode_pos then 
@@ -481,8 +481,8 @@ m.redraw = function()
     if m.pos == 0 then
       local n = "PARAMETERS"
       if m.group then n = n .. " / " .. m.groupname end
-      screen.level(4)
-      screen.move(0,10)
+      screen.level(15)
+      screen.move(0,15)
       screen.text(n)
     end
     for i=1,6 do
@@ -525,8 +525,8 @@ m.redraw = function()
     if m.pos == 0 then
       local n = "PARAMETER MAP"
       if m.group then n = n .. " / " .. m.groupname end
-      screen.level(4)
-      screen.move(0,10)
+      screen.level(15)
+      screen.move(0,15)
       screen.text(n)
     end
     for i=1,6 do
@@ -646,8 +646,8 @@ m.redraw = function()
     screen.text_right(pm.accum and "yes" or "no")
   -- PSET
   elseif m.mode == mPSET then
-    screen.level(4)
-    screen.move(0,10)
+    screen.level(15)
+    screen.move(0,15)
     screen.text("PSET")
     screen.move(0,30)
     local v = (m.ps_action == 1) and 15 or 4

@@ -65,6 +65,7 @@ m.redraw = function()
   screen.aa(1)
   _menu.draw_panel()
   screen.line_width(0.5)
+  --screen.font_face(4)
 
 
   screen.level(12)
