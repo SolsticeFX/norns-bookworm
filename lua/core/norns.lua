@@ -27,7 +27,7 @@ _norns.enc = function(n,delta) end
 
 _norns.touch = function(slot,press,x,y) end
 _norns.press = function(x,y) end
-_norns.release= function(x,y) end
+_norns.release = function(x,y) end
 _norns.tap = function(x,y) end
 _norns.drag = function(x,y, start_x, start_y, last_x, last_y) end
 

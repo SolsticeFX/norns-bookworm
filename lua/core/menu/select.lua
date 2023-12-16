@@ -93,6 +93,22 @@ m.key = function(n,z)
   end
 end
 
+m.tap = function(x,y)
+
+  local p = math.floor(y/70)
+  print(y)
+print(p)  
+
+
+
+ -- m.pos = util.clamp(m.pos + delta, 0, m.len - 1)
+ _menu.redraw()
+
+end
+
+
+
+
 m.enc = function(n,delta)
   if n==2 then
     delta = not m.alt and delta or delta*6
@@ -123,7 +139,7 @@ m.redraw = function()
         screen.move(0,10*i)
         local line = m.list[i+m.pos-2].name
         if(i==3) then
-          screen.level(15)
+          screen.rgblevel(15,0,0)
         else
           screen.level(4)
         end

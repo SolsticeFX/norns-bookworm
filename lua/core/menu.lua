@@ -126,8 +126,10 @@ end
 -- input redirection
 --TODO: redo with new UI widgets
 
-_norns.drag = function(gx,gy,start_x,start_y,last_x,last_y)
-if(start_y<70) then
+_menu.drag = function(gx,gy,start_x,start_y,last_x,last_y)
+print('draggier')
+if(start_y<40) and _menu.mode==true then
+
   local c = util.clamp(math.floor(gx/200)+1,1,4)
   if c ~= _menu.panel then
     _menu.panel = c
@@ -140,14 +142,16 @@ end
 
 _norns.release = function(x,y) end
 
-_norns.tap = function( gx, gy)
-  if(gy<70) then
-    local c = util.clamp(math.floor(gx/200)+1,1,4)
-    if c ~= _menu.panel then
-      _menu.panel = c
-      _menu.set_page(_menu.panels[_menu.panel])
+_menu.tap = function( gx, gy)
+
+    if(gy<40) and _menu.mode==true then
+      local c = util.clamp(math.floor(gx/200)+1,1,4)
+      if c ~= _menu.panel then
+        _menu.panel = c
+        _menu.set_page(_menu.panels[c])
+      end
+    else _menu.ptap(gx,gy) 
     end
-  else _menu.ptap(gx,gy) end
   end
 
 _menu.enc = function(n, delta)
@@ -221,8 +225,11 @@ _menu.set_mode = function(mode)
     redraw = norns.script.redraw
     _menu.key = key
     norns.encoders.callback = enc
-   
-
+    norns.touchpress.callback = press
+    norns.touchtap.callback = tap
+    norns.touchdrag.callback = drag
+    norns.touchrelease.callback = release
+  
     norns.enc.resume()
     redraw()
   elseif mode == true then -- ACTIVATE MENu MODE
@@ -234,6 +241,11 @@ _menu.set_mode = function(mode)
     screen.font_size(8)
     screen.line_width(1)
     norns.encoders.callback = _menu.enc
+    norns.touchtap.callback = _menu.tap
+    norns.touchdrag.callback = _menu.drag
+    norns.touchrelease.callback = _menu.release
+    norns.touchpress.callback = _menu.press
+
     norns.encoders.set_accel(1,false)
     norns.encoders.set_sens(1,2)
     norns.encoders.set_accel(2,false)
@@ -254,6 +266,10 @@ _menu.set_param_mode = function(mode)
     redraw = norns.script.redraw
     _menu.key = key
     norns.encoders.callback = enc
+    norns.touchpress.callback = press
+    norns.touchtap.callback = tap
+    norns.touchdrag.callback = drag
+    norns.touchrelease.callback = release
     norns.enc.resume()
     redraw()
   elseif mode == true then -- ACTIVATE MENu MODE
@@ -265,7 +281,10 @@ _menu.set_param_mode = function(mode)
     screen.font_size(8)
     screen.line_width(1)
     norns.encoders.callback = _menu.enc
-    norns.encoders.set_accel(1,false)
+    norns.touchtap.callback = _menu.tap
+    norns.touchdrag.callback = _menu.drag
+    norns.touchrelease.callback = _menu.release
+    norns.touchpress.callback = _menu.press    norns.encoders.set_accel(1,false)
     norns.encoders.set_sens(1,2)
     norns.encoders.set_accel(2,false)
     norns.encoders.set_sens(2,2)

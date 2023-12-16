@@ -20,6 +20,7 @@ def build(bld):
         'src/hardware/stat.c',
 	    'src/hardware/screen/fbdev.c',
         'src/hardware/input/gpio.c',
+        'src/hardware/input/touch.c',
         'src/args.c',
         'src/events.c',
         'src/hello.c',

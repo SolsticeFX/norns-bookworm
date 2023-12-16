@@ -13,6 +13,7 @@
 #include "hardware/input.h"
 #include "hardware/io.h"
 
+
 int input_setup(matron_io_t *io) {
     if (io->ops->type != IO_INPUT) {
         fprintf(stderr, "ERROR (%s) wrong IO type\n", io->ops->name);
