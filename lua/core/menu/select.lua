@@ -106,7 +106,7 @@ m.tap = function(x,y)
 
   m.pos = util.clamp(m.pos + p, 0, m.len - 1)
   listTicker = m.pos*(_G.touch_resolution_y/7)
-  print(listTicker)
+
  _menu.redraw()
 
 end

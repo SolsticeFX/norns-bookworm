@@ -8,7 +8,7 @@ local paramslist = {"output_level", "input_level", "monitor_level", "engine_leve
 local paramvals = {0,0,0,0,0,0}
 
 local bigmarkerwidth = 10
-local markerwidth = 4
+local markerwidth = 6
 local linesabove = 5
 local linesbelow = 15
 
