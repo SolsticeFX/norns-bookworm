@@ -46,7 +46,7 @@ m.redraw = function()
       if(i==3) then
         screen.rgblevel(15,0,0)
         screen.text(line)
-        screen.rgblevel(0,15,0)
+        screen.rgblevel(0,15,9)
         screen.text(" >")
       else
         screen.level(4)

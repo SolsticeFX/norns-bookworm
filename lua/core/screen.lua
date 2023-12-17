@@ -131,6 +131,46 @@ Screen.circle = function(x, y, r) _norns.screen_circle(x, y, r) end
 -- @tparam number h height
 Screen.rect = function(x, y, w, h) _norns.screen_rect(x, y, w, h) end
 
+--- draw rectangle with specified point at center.
+-- @tparam number x x position of center
+-- @tparam number y y position of center
+-- @tparam number w width
+-- @tparam number h height
+Screen.rect_center = function(x, y, w, h) 
+  _norns.screen_rect(x-(w/2), y+(h/2), w, h) 
+end
+ 
+--- draw rounded rectangle.
+-- @tparam number x x position
+-- @tparam number y y position
+-- @tparam number w width
+-- @tparam number h height
+-- @tparam number r radius
+
+Screen.rounded_rect = function(x, y, w, h, r) 
+  _norns.screen_move(x, y)
+  _norns.screen_arc(x + r, y + r, r, math.pi, 3 * math.pi / 2)
+  _norns.screen_arc(x + w - r, y + r, r, 3 * math.pi/ 2, 2 * math.pi)
+  _norns.screen_arc(x + w - r, y + h - r, r, 0, math.pi/ 2)
+  _norns.screen_arc(x + r, y + h - r, r, math.pi / 2, math.pi)
+  _norns.screen_close()
+end
+
+--- draw rounded rectangle with specified point at center.
+-- @tparam number x x position of center
+-- @tparam number y y position of center
+-- @tparam number w width
+-- @tparam number h height
+-- @tparam number r radius
+
+Screen.rounded_rect_center = function(x, y, w, h, r) 
+  _norns.screen_move(x-(w/2), y-(h/2))
+  _norns.screen_arc(x - (w/2)  + r, y + (h/2) + r, r, math.pi, 3 * math.pi / 2)
+  _norns.screen_arc(x - (w/2)  + w - r, y + (h/2) + r, r, 3 * math.pi/ 2, 2 * math.pi)
+  _norns.screen_arc(x - (w/2)  + w - r, y + (h/2) + h - r, r, 0, math.pi/ 2)
+  _norns.screen_arc(x - (w/2)  + r, y + (h/2) + h - r, r, math.pi / 2, math.pi)
+  _norns.screen_close()
+end
 --- draw curve (cubic Bézier spline).
 -- @tparam number x1 handle 1 x
 -- @tparam number y1 handle 1 y

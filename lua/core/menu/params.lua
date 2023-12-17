@@ -472,7 +472,7 @@ m.redraw = function()
       screen.move(0,10*i+25)
       screen.text(mode_item[i])
       if i==m.mode_pos then 
-        screen.rgblevel(0,15,0)  
+        screen.rgblevel(0,15,9)  
         screen.text(" >")
       end
     end

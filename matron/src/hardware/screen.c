@@ -417,6 +417,7 @@ void screen_rect(double x, double y, double w, double h) {
     cairo_rectangle(cr, x, y, w, h);
 }
 
+
 void screen_close_path(void) {
     CHECK_CR
     cairo_close_path(cr);

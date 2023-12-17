@@ -326,7 +326,7 @@ function _menu.draw_panel()
     screen.aa(1)
     screen.line_width(4)
     for i = 1,4 do
-      screen.rgblevel(i == _menu.panel and 15 or 7,i == _menu.panel and 15 or 7,i == _menu.panel and 0 or 4)
+      screen.rgblevel(i == _menu.panel and 15 or 7,i == _menu.panel and 13 or 5,i == _menu.panel and 5 or 2)
       screen.move((i-1)*33,0)
       screen.line_rel(30,0)
       screen.stroke()

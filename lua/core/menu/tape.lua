@@ -202,15 +202,22 @@ m.redraw = function()
 
   _menu.draw_panel()
 
-  screen.move(128,10)
-	screen.level(m.mode==TAPE_MODE_PLAY and 15 or 1)
-	screen.text_right("PLAY")
-  screen.level(2)
+  screen.move(0,10)
+  if m.mode==TAPE_MODE_PLAY then
+    screen.rgblevel(15,0,0)
+	screen.text("PLAY ")
+  screen.rgblevel(0,15,9)
+    screen.text(">")
+  else
+  screen.level(10)
+	screen.text("PLAY")
+  end
+  screen.level(6)
   screen.rect(0.5,13.5,127,2)
   screen.stroke()
 
   if m.play.file then
-    screen.level(2)
+    screen.level(6)
     screen.move(0,10)
     screen.text(m.play.file)
     screen.move(0,24)
@@ -229,10 +236,20 @@ m.redraw = function()
     end
   end
 
-  screen.move(128,48)
-  screen.level(m.mode==TAPE_MODE_REC and 15 or 1)
-  screen.text_right("REC")
-  screen.level(2)
+  screen.move(0,48)
+
+
+
+  if m.mode==TAPE_MODE_REC then
+    screen.rgblevel(15,0,0)
+	screen.text("REC")
+  screen.rgblevel(0,15,9)
+    screen.text(" >")
+else
+  screen.level(10)
+	screen.text("REC")
+  end
+  screen.level(6)
   screen.rect(0.5,51.5,127,2)
   screen.stroke()
   if m.mode==TAPE_MODE_REC then
@@ -242,14 +259,14 @@ m.redraw = function()
     elseif m.rec.sel == TAPE_REC_STOP then screen.text_center("STOP") end
   end
   if m.rec.sel ~= TAPE_REC_ARM then
-    screen.level(1)
+    screen.level(5)
     screen.move(0,48)
     screen.text(m.rec.file)
-    screen.level(2)
+    screen.level(6)
     screen.move(0,62)
     screen.text(util.s_to_hms(math.floor(m.rec.pos_tick)))
   end
-  screen.level(2)
+  screen.level(6)
   screen.move(127,62)
   screen.text_right(util.s_to_hms(m.diskfree))
   screen.level(15)

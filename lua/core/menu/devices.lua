@@ -216,7 +216,7 @@ m.redraw = function()
 
       screen.text(string.upper(m.list[i]))
       if(i==m.pos) then
-        screen.rgblevel(0,15,0)
+        screen.rgblevel(0,15,9)
         screen.text(" >")
       end
 

@@ -3,14 +3,16 @@ local m = {
 }
 
 local scx = 128
-local labels = {"output", "input", "monitor", "engine", "softcut", "tape"}
-local paramslist = {"output_level", "input_level", "monitor_level", "engine_level", "softcut_level", "tape_level"}
+local labels = {"input",  "engine", "softcut", "looper", "monitor", "output"}
+local paramslist = {"input_level",  "engine_level", "softcut_level", "tape_level", "monitor_level", "output_level"}
 local paramvals = {0,0,0,0,0,0}
 
-local bigmarkerwidth = 10
-local markerwidth = 6
+local bigmarkerwidth = 12
+local sliderwidth = 10
+local markerwidth = 5
 local linesabove = 5
 local linesbelow = 15
+
 
 
 
@@ -27,8 +29,8 @@ m.key = function(n,z)
 end
 
 m.enc = function(n,d)
-  local ch1 = {"output_level", "monitor_level", "softcut_level"}
-  local ch2 = {"input_level", "engine_level", "tape_level"}
+  local ch1 = {"input_level", "softcut_level", "monitor_level"}
+  local ch2 = {"engine_level","tape_level", "output_level"}
 
   if n==2 then
     params:delta(ch1[m.sel],d)
@@ -62,27 +64,27 @@ end
 m.redraw = function()
   local n
   screen.clear()
-  screen.aa(1)
+  screen.aa(0)
   _menu.draw_panel()
   screen.line_width(0.5)
-  --screen.font_face(4)
+  --screen.font_face(63)
 
 
   screen.level(12)
   n = m.in1/64*48
-  screen.rect(128*2/7 - 8,55.5,2,-n)
+  screen.rect(128/7 - 12,55.5,2,-n)
   screen.stroke()
 
   n = m.in2/64*48
-  screen.rect(128*2/7 -10,55.5,2,-n)
+  screen.rect(128/7 - 10,55.5,2,-n)
   screen.stroke()
 
   n = m.out1/64*48
-  screen.rect(128/7 -8 ,55.5,2,-n)
+  screen.rect(128*6/7 + 10 ,55.5,2,-n)
   screen.stroke()
 
   n = m.out2/64*48
-  screen.rect(128/7 -10,55.5,2,-n)
+  screen.rect(128*6/7 + 12,55.5,2,-n)
   screen.stroke()
 
 
@@ -102,13 +104,20 @@ m.redraw = function()
       screen.stroke()
     end
 
-    screen.level(15)
+    screen.level(8)
     screen.move(x-bigmarkerwidth/2 ,21.5)
     screen.line_rel(bigmarkerwidth,0)
     screen.stroke()
     
     screen.font_size(4)
     screen.move(x,63)
+    if i==(m.sel*2)-1 then
+      screen.rgblevel(15,4,0)
+    end
+    if i==m.sel*2 then
+      screen.rgblevel(0,15,9)
+    end
+
     screen.text_center(labels[i])
     screen.font_size(3)
     screen.move(x,69)
@@ -116,40 +125,84 @@ m.redraw = function()
   end
 
 
-  n = params:get_raw("output_level")*48
-  --screen.rect(128/7,55.5,2,-n)
-  screen.rgblevel(6,7,8)
-  screen.rect(128/7-(bigmarkerwidth/2),55.5-n,10,5)
-  screen.fill()
-
+local aa = 10
+local bb = 10
+local cc = 10
 
   n = params:get_raw("input_level")*48
-  screen.rgblevel(7,6,8)
-  screen.rect(128*2/7-(bigmarkerwidth/2),55.5-n,10,5)
+  screen.rgblevel(bb,aa,cc)
+  --screen.rect_center(128/7,50.5-n,sliderwidth,5)
+  screen.rounded_rect_center(128/7,50.5-n,sliderwidth,5,1)
   screen.fill()
-  --screen.stroke()
-
-
-  n = params:get_raw("monitor_level")*48
-  screen.rgblevel(8,7,6)
-  screen.rect(128*3/7-(bigmarkerwidth/2),55.5-n,10,5)
-  screen.fill()
-  --screen.stroke()
 
   n = params:get_raw("engine_level")*48
-  screen.rgblevel(7,8,6)
-  screen.rect(128*4/7-(bigmarkerwidth/2),55.5-n,10,5)
+  screen.rgblevel(bb,cc,aa)
+  screen.rounded_rect_center(128*2/7,50.5-n,sliderwidth,5,1)
   screen.fill()
 
   n = params:get_raw("softcut_level")*48
-  screen.rgblevel(6,8,7)
-  screen.rect(128*5/7-(bigmarkerwidth/2),55.5-n,10,5)
+  screen.rgblevel(aa,cc,bb)
+  screen.rounded_rect_center(128*3/7,50.5-n,sliderwidth,5,1)
   screen.fill()
 
   n = params:get_raw("tape_level")*48
-  screen.rgblevel(8,6,7)
-  screen.rect(128*6/7-(bigmarkerwidth/2),55.5-n,10,5)
+  screen.rgblevel(cc,aa,bb)
+  screen.rounded_rect_center(128*4/7,50.5-n,sliderwidth,5,1)
   screen.fill()
+
+  n = params:get_raw("monitor_level")*48
+  screen.rgblevel(cc,bb,aa)
+  screen.rounded_rect_center(128*5/7,50.5-n,sliderwidth,5,1)
+  screen.fill()
+
+  n = params:get_raw("output_level")*48
+  screen.rgblevel(aa,bb,cc)
+  screen.rounded_rect_center(128*6/7,50.5-n,sliderwidth,5,1)
+  screen.fill()
+
+  screen.line_width(1)
+
+  if m.sel == 1 then
+    n = params:get_raw("input_level")*48
+    screen.rgblevel(15,4,0)
+    screen.rect_center(128/7,48.5-n,sliderwidth + 2,7)
+    screen.stroke()
+  
+    n = params:get_raw("engine_level")*48
+    screen.rgblevel(0,15,9)
+    screen.rect_center(128*2/7,48.5-n,sliderwidth + 2,7)
+    screen.stroke()
+  
+  elseif m.sel == 2 then
+    n = params:get_raw("softcut_level")*48
+    screen.rgblevel(15,4,0)
+    screen.rect_center(128*3/7,48.5-n,sliderwidth + 2,7)
+    screen.stroke()
+  
+    n = params:get_raw("tape_level")*48
+    screen.rgblevel(0,15,9)
+    screen.rect_center(128*4/7,48.5-n,sliderwidth + 2,7)
+    screen.stroke()
+    
+
+  elseif m.sel == 3 then
+    n = params:get_raw("monitor_level")*48
+    screen.rgblevel(15,4,0)
+    screen.rect_center(128*5/7,48.5-n,sliderwidth + 2,7)
+    screen.stroke()
+  
+    n = params:get_raw("output_level")*48
+    screen.rgblevel(0,15,9)
+    screen.rect_center(128*6/7,48.5-n,sliderwidth + 2,7)
+    screen.stroke()
+  
+  
+    end 
+    screen.line_width(0.5)
+
+
+
+
 --
 
 screen.level(15)

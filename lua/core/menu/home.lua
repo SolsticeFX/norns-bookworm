@@ -138,7 +138,7 @@ m.redraw = function()
     end
     screen.text(m.list[i])
     if(i==m.pos) then
-      screen.rgblevel(0,15,0)
+      screen.rgblevel(0,15,9)
       screen.text(" >")
     else
       screen.level(4)
