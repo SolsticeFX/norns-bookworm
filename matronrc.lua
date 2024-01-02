@@ -8,6 +8,8 @@ _boot.add_io('keys:gpio',    {dev='/dev/input/by-path/platform-button@8-event'})
   _boot.add_io('enc:gpio',     {dev='/dev/input/by-path/platform-soc:knob1-event', index=1})
   _boot.add_io('enc:gpio',     {dev='/dev/input/by-path/platform-soc:knob4-event', index=2})
   _boot.add_io('enc:gpio',     {dev='/dev/input/by-path/platform-soc:knob6-event', index=3})
+  _boot.add_io('enc:gpio',     {dev='/dev/input/by-path/platform-soc:knob5-event', index=4})
+
 end
 
 function init_desktop()

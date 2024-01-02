@@ -6,13 +6,26 @@ local encoders = {}
 local util = require 'util'
 
 local now = util.time()
-
 encoders.tick = {0,0,0,0}
 encoders.accel = {true,true,true,true}
 encoders.sens = {1,1,1,1}
 encoders.time = {now,now,now,now}
 encoders.callback = norns.none
 
+encoders.set_rgb = function(n)
+  if n == 0 then
+    screen.rgblevel(15,15,15)
+  elseif n == 1 then
+    screen.rgblevel(15,15,6)
+  elseif n == 2 then
+    screen.rgblevel(15,0,0)
+  elseif n == 3 then
+    screen.rgblevel(0,15,0)
+  elseif n == 4 then
+    screen.rgblevel(0,0,15)
+end
+
+end
 --- set acceleration
 encoders.set_accel = function(n,z)
   if n == 0 then

@@ -148,7 +148,7 @@ end
 -- @tparam number r radius
 
 Screen.rounded_rect = function(x, y, w, h, r) 
-  _norns.screen_move(x, y)
+ -- _norns.screen_move(x, y)
   _norns.screen_arc(x + r, y + r, r, math.pi, 3 * math.pi / 2)
   _norns.screen_arc(x + w - r, y + r, r, 3 * math.pi/ 2, 2 * math.pi)
   _norns.screen_arc(x + w - r, y + h - r, r, 0, math.pi/ 2)
@@ -164,11 +164,11 @@ end
 -- @tparam number r radius
 
 Screen.rounded_rect_center = function(x, y, w, h, r) 
-  _norns.screen_move(x-(w/2), y-(h/2))
-  _norns.screen_arc(x - (w/2)  + r, y + (h/2) + r, r, math.pi, 3 * math.pi / 2)
-  _norns.screen_arc(x - (w/2)  + w - r, y + (h/2) + r, r, 3 * math.pi/ 2, 2 * math.pi)
-  _norns.screen_arc(x - (w/2)  + w - r, y + (h/2) + h - r, r, 0, math.pi/ 2)
-  _norns.screen_arc(x - (w/2)  + r, y + (h/2) + h - r, r, math.pi / 2, math.pi)
+  --_norns.screen_move(x-(w/2), y+(h/2))
+  _norns.screen_arc(x - (w/2)  + r, y - (h/2) + r, r, math.pi, 3 * math.pi / 2)
+  _norns.screen_arc(x - (w/2)  + w - r, y - (h/2) + r, r, 3 * math.pi/ 2, 2 * math.pi)
+  _norns.screen_arc(x - (w/2)  + w - r, y - (h/2) + h - r, r, 0, math.pi/ 2)
+  _norns.screen_arc(x - (w/2)  + r, y - (h/2) + h - r, r, math.pi / 2, math.pi)
   _norns.screen_close()
 end
 --- draw curve (cubic Bézier spline).
