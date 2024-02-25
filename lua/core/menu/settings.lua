@@ -2,8 +2,8 @@ local textentry= require 'textentry'
 
 local m = {
   pos = 1,
-  list = {"RESET", "PASSWORD >", "BATTERY WARNING"},
-  pages = {"RESET", "PASSWORD"}
+  list = {"LED", "WIFI", "RESET", "PASSWORD", "BATTERY WARNING"},
+  pages = {"LED", "WIFI", "RESET", "PASSWORD"}
 }
 
 m.key = function(n,z)
@@ -14,6 +14,10 @@ m.key = function(n,z)
       _menu.set_page("RESET")
     elseif m.pages[m.pos]=="PASSWORD" then
       textentry.enter(m.passdone, "", "new password:", m.passcheck)
+    elseif m.pages[m.pos]=="WIFI" then
+      _menu.set_page("WIFI")
+    elseif m.pages[m.pos]=="LED" then
+      _menu.set_page("LED")
     end
   end
 end
@@ -24,6 +28,14 @@ m.enc = function(n,delta)
     _menu.redraw()
   elseif n==3 and m.list[m.pos]=="BATTERY WARNING" then
     norns.state.battery_warning = (delta>0) and 1 or 0
+    screen.update = screen.update_default
+    _menu.redraw()
+  elseif n==3 and m.list[m.pos]=="LED" then
+    norns.state.led_brightness = util.clamp(norns.state.led_brightness + delta, 0, 100)
+    C = 255
+    --os.execute("python3 /home/we/leds.py "..(255 * math.log(norns.state.led_brightness*2.55/C + 1) / math.log(255/C + 1)))
+    os.execute("python3 /home/we/leds.py "..(2^(norns.state.led_brightness/13)))
+
     screen.update = screen.update_default
     _menu.redraw()
   end
@@ -44,6 +56,10 @@ m.redraw = function()
       if m.list[i+m.pos-3]=="BATTERY WARNING" then
 	screen.move(128,10*i)
 	screen.text_right(norns.state.battery_warning==1 and "on" or "off")
+      end
+      if m.list[i+m.pos-3]=="LED BRIGHTNESS" then
+        screen.move(128,10*i)
+        screen.text_right(norns.state.led_brightness)
       end
     end
   end

@@ -28,6 +28,7 @@ _menu.mode = false
 _menu.paramMode = false
 _menu.page = "HOME"
 _menu.panel = 3
+--_menu.panels = {"MIX", "TAPE", "HOME", "LOOPER", "PARAMS"}
 _menu.panels = {"MIX", "TAPE", "HOME", "PARAMS"}
 _menu.alt = false
 _menu.scripterror = false
@@ -151,12 +152,17 @@ _menu.tap = function( gx, gy)
         _menu.panel = c
         _menu.set_page(_menu.panels[c])
       end
-    else _menu.ptap(gx,gy) 
+
+    else 
+     _menu.ptap(gx,gy) 
+     
+
+     
     end
   end
 
 _menu.enc = function(n, delta)
-  if n==1 and _menu.alt == false then
+  if n==1 and _menu.alt == false and _menu.mode then
     --mix:delta("output",delta)
     local c = util.clamp(_menu.panel+delta,1,4)
     if c ~= _menu.panel then
@@ -165,7 +171,8 @@ _menu.enc = function(n, delta)
       _menu.set_page(_menu.panels[_menu.panel])
       nav_vanish:start()
     end
-  else _menu.penc(n, delta) end
+  else _menu.penc(n, delta) 
+  end
 end
 
 
@@ -285,7 +292,8 @@ _menu.set_param_mode = function(mode)
     norns.touchtap.callback = _menu.tap
     norns.touchdrag.callback = _menu.drag
     norns.touchrelease.callback = _menu.release
-    norns.touchpress.callback = _menu.press    norns.encoders.set_accel(1,false)
+    norns.touchpress.callback = _menu.press    
+    norns.encoders.set_accel(1,false)
     norns.encoders.set_sens(1,2)
     norns.encoders.set_accel(2,false)
     norns.encoders.set_sens(2,2)
@@ -447,10 +455,12 @@ end
 -- interfaces
 
 m["HOME"] = require 'core/menu/home'
+--m["LOOPER"] = require '/home/we/dust/code/reels/reels'
 m["SELECT"] = require 'core/menu/select'
 m["PREVIEW"] = require 'core/menu/preview'
 m["PARAMS"] = require 'core/menu/params'
 m["SYSTEM"] = require 'core/menu/system'
+m["LED"] = require 'core/menu/led'
 m["DEVICES"] = require 'core/menu/devices'
 m["WIFI"] = require 'core/menu/wifi'
 m["SETTINGS"] = require 'core/menu/settings'

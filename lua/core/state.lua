@@ -5,10 +5,15 @@ state.script = ''
 state.path = _path.code
 state.lib = _path.code
 state.data = _path.data
+--state.stardustpath = _path.stardustcode
+--state.stardustlib = _path.stardustcode
+--state.stardustdata = _path.stardustdata
+
 state.name = ''
 state.shortname = ''
 state.clean_shutdown = false
 state.battery_warning = 1
+state.led_brightness = 255
 
 state.mix = {}
 state.mix.output = 0
@@ -113,7 +118,10 @@ state.save_state = function()
   io.write("norns.state.shortname = '" .. state.shortname .. "'\n")
   io.write("norns.state.path = '" .. state.path .. "'\n")
   io.write("norns.state.data = '" .. state.data .. "'\n")
+  --io.write("norns.state.stardustpath = '" .. state.stardustpath .. "'\n")
+  --io.write("norns.state.stardustdata = '" .. state.stardustdata .. "'\n")
   io.write("norns.state.battery_warning = " .. state.battery_warning .. "\n")
+  io.write("norns.state.led_brightness = " .. state.led_brightness .. "\n")
   io.write("norns.state.mix.output = " .. norns.state.mix.output .. "\n")
   io.write("norns.state.mix.input = " .. norns.state.mix.input .. "\n")
   io.write("norns.state.mix.monitor = " .. norns.state.mix.monitor .. "\n")

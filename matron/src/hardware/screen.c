@@ -31,7 +31,7 @@
     }
 #endif
 
-#define NUM_FONTS 67
+#define NUM_FONTS 68
 #define NUM_OPS 29
 
 static char font_path[NUM_FONTS][32];
@@ -104,7 +104,7 @@ void screen_init(void) {
         fprintf(stderr, "ERROR (screen) freetype init\n");
         return;
     }
-
+    //strcpy(font_path[0], "Technotype.ttf");
     strcpy(font_path[0], "04B_03__.TTF");
     strcpy(font_path[1], "liquid.ttf");
     strcpy(font_path[2], "Roboto-Thin.ttf");
@@ -133,7 +133,8 @@ void screen_init(void) {
     // bitmap fonts
     strcpy(font_path[24], "bmp/tom-thumb.bdf");
     // FIXME: this is totally silly...
-    int i = 25;
+    strcpy(font_path[25], "Technotype.ttf");
+    int i = 26;
     strcpy(font_path[i++], "bmp/creep.bdf");
     strcpy(font_path[i++], "bmp/ctrld-fixed-10b.bdf");
     strcpy(font_path[i++], "bmp/ctrld-fixed-10r.bdf");
@@ -204,7 +205,7 @@ void screen_init(void) {
             ct[i] = cairo_ft_font_face_create_for_ft_face(face[i], 0);
         }
     }
-
+    //cairo_set_operator(cr, CAIRO_OPERATOR_HARD_LIGHT);
     cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
     cairo_scale(cr,6.25,6.25);
     cairo_paint(cr);
@@ -440,6 +441,7 @@ void screen_text(const char *s) {
 
 void screen_clear(void) {
     CHECK_CR
+    //cairo_set_operator(cr, CAIRO_OPERATOR_HARD_LIGHT);
     cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
     cairo_paint(cr);
     cairo_set_operator(cr, CAIRO_OPERATOR_OVER);

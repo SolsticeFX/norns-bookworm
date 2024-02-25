@@ -177,6 +177,8 @@ m.key = function(n,z)
       elseif t == params.tFILE then
         if m.mode == mEDIT then
           fileselect.enter(_path.dust, m.newfile)
+          --fileselect.enter(_path.stardust, m.newfile)
+
           local fparam = params:lookup_param(i)
           local dir_prev = fparam.dir or m.dir_prev
           if dir_prev ~= nil then
@@ -461,12 +463,12 @@ m.redraw = function()
 
   -- SELECT
   if m.mode == mSELECT then
-    screen.level(15)
+    screen.rgblevel(4,6,15)
     screen.move(0,15)
     screen.text("PARAMETERS")
     for i=1,3 do
       if i==m.mode_pos then 
-        screen.rgblevel(15,0,0) 
+        screen.rgblevel(15,2,2) 
       else screen.level(4) 
       end
       screen.move(0,10*i+25)

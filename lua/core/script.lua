@@ -101,9 +101,17 @@ Script.clear = function()
   norns.state.script = ''
   norns.state.name = 'none'
   norns.state.shortname = 'none'
+  --norns.state.path = _path["dust"]
+  --norns.state.data = _path.data
+
   norns.state.path = _path["dust"]
   norns.state.data = _path.data
   norns.state.lib = norns.state.path
+
+  --norns.state.stardustpath = _path["stardust"]
+  --norns.state.stardustdata = _path.stardustdata
+  --norns.state.stardustlib = norns.state.stardustpath
+
   norns.version.required = nil
 
   -- clear params
@@ -136,7 +144,7 @@ Script.clear = function()
 end
 
 Script.init = function()
-  print("# script init")
+  print("# script init "..norns.state.shortname)
   params.name = norns.state.shortname
   init()
   _norns.screen_save()
@@ -147,22 +155,30 @@ end
 --- load a script from the /scripts folder.
 -- @tparam string filename file to load. leave blank to reload current file.
 Script.load = function(filename)
-  local name, path
+  local name, path--, stardustpath
   if filename == nil then
     filename = norns.state.script
     name = norns.state.name
     path = norns.state.path
+    --stardustpath = norns.state.stardustpath
   else
-    filename = string.sub(filename,1,1) == "/" and filename or _path["dust"]..filename
+
+    filename = (string.sub(filename,1,1) == "/" and filename) or (_path["dust"]..filename)
+
     path, scriptname = filename:match("^(.*)/([^.]*).*$")
-    name = string.sub(path, string.len(_path["code"]) + 1)
+    name = string.sub(path, string.len(_path["code"])+1)
+
     -- append scriptname to the name if it doesn't match directory name in case multiple scripts reside in the same directory
     -- ex: we/study/study1, we/study/study2, ...
-    if string.sub(name, -#scriptname) ~= scriptname then
-      name_parts = tab.split(name, "/")
-      table.insert(name_parts, scriptname)
-      name = table.concat(name_parts, "/")
+   if(name ~= nil) then
+      if string.sub(name, -#scriptname) ~= scriptname then
+        name_parts = tab.split(name, "/")
+        table.insert(name_parts, scriptname)
+        name = table.concat(name_parts, "/")
+      end
     end
+
+
   end
 
   local f=io.open(filename,"r")
@@ -178,9 +194,14 @@ Script.load = function(filename)
     norns.state.script = filename
     norns.state.name = name
     norns.state.shortname = norns.state.name:match( "([^/]+)$" )
+
+    if path~=nil then
     norns.state.path = path .. '/'
     norns.state.lib = path .. '/lib/'
-    norns.state.data = _path.data .. name .. '/'
+    norns.state.data = _path.data .. norns.state.shortname .. '/'
+    end
+
+
     norns.state.pset_last = 1
 
     if util.file_exists(norns.state.data) == false then

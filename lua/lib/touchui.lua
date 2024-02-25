@@ -5,11 +5,35 @@
 -- @release v1.0.2
 -- @author Mark Eats
 
+
+-- global include function
+function include(file)
+  local dirs = {norns.state.path, _path.code, _path.extn, _path.globallib}
+  for _, dir in ipairs(dirs) do
+    print (dir)
+    local p = dir..file..'.lua'
+    print(p)
+    if util.file_exists(p) then
+      print("including "..p)
+      return dofile(p)
+    end
+  end
+
+  -- didn't find anything
+  print("### MISSING INCLUDE: "..file)
+  error("MISSING INCLUDE: "..file,2)
+end
+
+
+
 local TouchUI = {}
 TouchUI.__index = TouchUI
 
 
-
+TouchUI.Dial = include('/touchui/touchdial')
+TouchUI.Pages = include('/touchui/touchpages')
+TouchUI.Slider = include('/touchui/touchslider')
+--[=[
 -------- Pages --------
 
 --- Pages
@@ -64,7 +88,7 @@ function TouchUI.Pages:redraw()
     dots_y = dots_y + dot_height + dot_gap
   end
 end
-
+--]=]
 
 -------- Tabs --------
 
@@ -317,7 +341,7 @@ function TouchUI.Message:redraw()
   screen.fill()
 end
 
-
+--[==[
 -------- Slider --------
 
 --- Slider
@@ -444,32 +468,34 @@ else
   end
 end
 
-
   screen.fill()
-  
-  
-  --local filled_height = util.round(util.linlin(self.min_value, self.max_value, 0, self.height, self.value))
-  --screen.rect(self.x, self.y + self.height - filled_height, self.width, filled_height)
-  
 
   --draw the slider
   local filled_amount --sometimes width now
   if self.direction == "up" then
+    screen.level(15)
+    screen.rounded_rect_center(self.x + self.width/2,self.y+self.height/2,2, self.height,1)
+    screen.fill()
       filled_amount = util.round(util.linlin(self.min_value, self.max_value, 0, self.height, self.value))
       if self.active and self.encoder > 0 then
         screen.line_width(1)
         norns.encoders.set_rgb(self.encoder)
         screen.rounded_rect_center(self.x + self.width/2,self.y + filled_amount,self.slider_width+2,self.slider_height+2,1)
         screen.stroke()
+
       end
       screen.rounded_rect_center(self.x + self.width/2,self.y + filled_amount,self.slider_width,self.slider_height,1)
     elseif self.direction == "down" then
+      screen.level(15)
+      screen.rounded_rect_center(self.x + self.width/2, self.y + self.height/2, 2, self.height,1)
+      screen.stroke()
       filled_amount = util.round(util.linlin(self.min_value, self.max_value, 0, self.height, self.value)) --same as up
       if self.active and self.encoder > 0 then
         screen.line_width(1)
         norns.encoders.set_rgb(self.encoder)
         screen.rounded_rect_center(self.x + self.width/2,self.y + filled_amount,self.slider_width+2,self.slider_height+2,1)
         screen.stroke()
+
       end
       screen.rounded_rect_center(self.x + self.width/2,self.y + filled_amount  ,self.slider_width,self.slider_height,1)
 
@@ -499,8 +525,8 @@ end
   screen.line_width(1)
 
 end
-
-
+--]==]
+--[=====[ 
 -------- Dial --------
 
 --- Dial
@@ -541,7 +567,8 @@ function TouchUI.Dial.new(x, y, size, value, min_value, max_value, rounding, sta
     _start_angle = math.pi * 0.7,
     _end_angle = math.pi * 2.3,
     _markers = {},
-    _marker_points = {}
+    _marker_points = {},
+    color = {r,g,b}
   }
   setmetatable(TouchUI.Dial, {__index = TouchUI})
   setmetatable(dial, TouchUI.Dial)
@@ -614,7 +641,11 @@ function TouchUI.Dial:redraw()
     screen.stroke()
   end
   
-  screen.level(15)
+  --screen.level(15)
+  if self.active and self.encoder > 0 then
+    norns.encoders.set_rgb(self.encoder)
+  end
+
   screen.line_width(2.5)
   screen.arc(self.x + radius, self.y + radius, radius - 0.5, fill_start_angle, fill_end_angle)
   screen.stroke()
@@ -634,7 +665,7 @@ function TouchUI.Dial:redraw()
   screen.text_center(title)
   screen.fill()
 end
-
+--]=====]
 
 -------- PlaybackIcon --------
 

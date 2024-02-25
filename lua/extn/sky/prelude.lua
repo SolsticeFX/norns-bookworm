@@ -10,7 +10,7 @@ end
 
 sky = {
   __loaded = {},
-  __search = {paths.this.path, paths.code},
+  __search = {paths.this.path, paths.code},--, paths.stardustcode},
 }
 
 function sky.use_debug(bool)

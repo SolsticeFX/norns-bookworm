@@ -10,13 +10,14 @@
 #include "oracle.h"
 #include "screen.h"
 #include "weaver.h"
-
-#define LIGHTS 32
+#define LIGHTS 128
 #define GRAVITY 2048
+#define SPREAD 2
 
 // thread id
 static pthread_t tid;
 // microseconds per frame
+//static const int tick_us = 5000;
 static const int tick_us = 5000;
 // frames before timeout
 static const int timeout_ticks = 2400; // ~12 seconds?
@@ -42,8 +43,17 @@ struct {
     int y;
 } black;
 
+struct {
+    int r;
+    int g;
+    int b;
+} rgbcolor;
+
+
+
 static int count = 0;
 static int start = 1;
+
 
 static int timeout = 0;
 static int ok = 0;
@@ -75,12 +85,15 @@ void *hello_loop(void *p) {
     // fadeout
     while (norns_hello(0)) {
         usleep(tick_us);
+    
+
     }
 
     if (timeout) {
         event_post(event_data_new(EVENT_STARTUP_READY_TIMEOUT));
     } else {
         event_post(event_data_new(EVENT_STARTUP_READY_OK));
+        
     }
 
     thread_running = false;
@@ -107,9 +120,9 @@ void norns_hello_start() {
     if (thread_running) {
         return;
     }
-
+    system("python3 /home/we/boot.py");
     srand(time(NULL));
-    screen_aa(0);
+    screen_aa(1);
     screen_line_width(1);
 
     for (int i = 0; i < LIGHTS; i++) {
@@ -132,6 +145,7 @@ void norns_hello_start() {
 
 void norns_hello_ok() {
     ok = 1;
+    system("python3 /home/we/postboot.py");
 }
 
 int norns_hello(int live) {
@@ -142,6 +156,8 @@ int norns_hello(int live) {
     }
 
     screen_clear();
+
+
     // screen_line_width(1.0); // FIXME: for some reason setting this disables drawing
 
     center.dx = center.dx + (black.x - center.x) / GRAVITY;
@@ -150,9 +166,12 @@ int norns_hello(int live) {
     center.y = center.y + center.dy;
     int alive = 0;
 
+
+    
+
     for (int i = 0; i < LIGHTS; i++) {
         if (light[i].range == 2) {
-            if (start < 64)
+            if (start < 64 * SPREAD)
                 start++;
             light[i].range--;
         } else if (light[i].range > 2) {
@@ -161,15 +180,48 @@ int norns_hello(int live) {
             light[i].y += light[i].dy;
             alive++;
             screen_rect(light[i].x, light[i].y, 1, 1);
-            screen_level(ceil(15 * light[i].range / light[i].life) * (start / 64.0));
+/*
+            int picker = (rand() % 3);
+            if (picker == 0){
+            screen_rgblevel(ceil(4 * light[i].range / light[i].life) * (start / 64.0), ceil(6 * light[i].range / light[i].life) * (start / 64.0), ceil(15 * light[i].range / light[i].life) * (start / 64.0));
+            }
+            else if (picker==1)
+            {
+screen_rgblevel(ceil(4 * light[i].range / light[i].life) * (start / 64.0), ceil(15 * light[i].range / light[i].life) * (start / 64.0), ceil(6 * light[i].range / light[i].life) * (start / 64.0));            }
+else {
+screen_rgblevel(ceil(15 * light[i].range / light[i].life) * (start / 64.0), ceil(4 * light[i].range / light[i].life) * (start / 64.0), ceil(6 * light[i].range / light[i].life) * (start / 64.0));            }
+*/
+
+            
+
+            //screen_level(ceil(15 * light[i].range / light[i].life) * (start / 64.0));
+            
+            
+            int r = 10+(rand() % 5);
+            int g = 10+(rand() % 5);
+            int b = 10+(rand() % 5);
+
+            r = ceil(r * light[i].range / light[i].life) * (start / 64.0);
+            g = ceil(g * light[i].range / light[i].life) * (start / 64.0);
+            b = ceil(b * light[i].range / light[i].life) * (start / 64.0);
+
+            double f = 3; // increase saturation
+            double L = 0.3*r + 0.6*g + 0.1*b;
+
+            rgbcolor.r = r - f * (L - r);
+            rgbcolor.g =  g - f * (L - g);
+            rgbcolor.b =  b - f * (L - b);
+
+
+            screen_rgblevel(rgbcolor.r,rgbcolor.g ,rgbcolor.b );
             screen_stroke();
         } else if (live) {
-            light[i].life = 64 + rand() % 64;
+            light[i].life = rand() % 64 * SPREAD;
             light[i].range = light[i].life;
             light[i].x = center.x;
             light[i].y = center.y;
-            light[i].dx = (rand() % 32 - 16) / 96.0;
-            light[i].dy = (rand() % 32 - 16) / 96.0;
+            light[i].dx = (rand() % 32 - 16) / 96.0 * SPREAD;
+            light[i].dy = (rand() % 32 - 16) / 96.0 * SPREAD;
         }
     }
     screen_update();

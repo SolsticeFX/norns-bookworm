@@ -12,7 +12,7 @@ local Mods = {}
 Mods.search_pattern = "*/lib/mod.lua"
 
 function Mods.scan(root, pattern)
-  local r = root or paths.code
+  local r = root or paths.code --or paths.stardustcode
   local p = pattern or Mods.search_pattern
 
   local matches, error = norns.system_glob(r .. p)

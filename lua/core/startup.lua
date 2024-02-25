@@ -35,7 +35,7 @@ require 'core/menu'
 
 -- global include function
 function include(file)
-  local dirs = {norns.state.path, _path.code, _path.extn}
+  local dirs = {norns.state.path, _path.code, _path.extn}--, norns.state.stardustpath, _path.stardustcode}
   for _, dir in ipairs(dirs) do
     local p = dir..file..'.lua'
     if util.file_exists(p) then
@@ -77,7 +77,11 @@ _norns.startup_status.timeout = function()
   norns.script.clear()
   print("norns.startup_status.timeout")
   local cmd="find ~/dust -name *.sc -type f -printf '%p %f\n' | sort -k2 | uniq -f1 --all-repeated=separate"
+  --local cmd2="find ~/stardust -name *.sc -type f -printf '%p %f\n' | sort -k2 | uniq -f1 --all-repeated=separate"
+
   local results = util.os_capture(cmd,true)
+  --local results2 = util.os_capture(cmd2,true)
+
   if results ~= "" then
     print("DUPLICATE ENGINES:\n" .. results)
     norns.scripterror("DUPLICATE ENGINES")
@@ -104,14 +108,31 @@ end
   os.execute("sudo sh -c \"TERM=linux setterm -foreground black -clear all >/dev/tty0\"")
   os.execute("jack_disconnect 'mod-monitor:out_1' 'system:playback_1'")
   os.execute("jack_disconnect 'mod-monitor:out_2' 'system:playback_2'")
-  os.execute("jack_disconnect 'system:capture_1' 'crone:input_1'")
-  os.execute("jack_disconnect 'system:capture_2' 'crone:input_2'")
+  --  os.execute("jack_disconnect 'system:capture_1' 'crone:input_1'")
+  --  os.execute("jack_disconnect 'system:capture_2' 'crone:input_2'")
   os.execute("jack_connect 'mod-monitor:out_1' 'crone:input_1'")
   os.execute("jack_connect 'mod-monitor:out_2' 'crone:input_2'")
+
+-- USB Audio
+
+
+
 
 print("start_audio(): ")
 -- start the process of syncing with crone boot
 _norns.start_audio()
+
+print("start_usb_audio(): ")
+--os.execute("alsa_in -d hw:UAC2Gadget &")
+--os.execute("alsa_out -d hw:UAC2Gadget &")
+--os.execute("jack_connect crone:input_1 alsa_in:capture_1")
+--os.execute("jack_connect crone:input_2 alsa_in:capture_2")
+--os.execute("jack_connect crone:output_1 alsa_out:playback_1")
+--os.execute("jack_connect crone:output_2 alsa_out:playback_2")
+--os.execute("jack_connect system:capture_1 alsa_out:playback_1")
+--os.execute("jack_connect system:capture_2 alsa_out:playback_2")
+os.execute("/home/we/usb_audio.sh")
+
 
 -- load matron mods and invoke system hooks
 local mods = require 'core/mods'

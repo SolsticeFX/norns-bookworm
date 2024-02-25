@@ -84,6 +84,7 @@ function pmap.read()
     return s:gsub('^"', ''):gsub('"$', ''):gsub('\\"', '"')
   end
   local filename = norns.state.data..norns.state.shortname..".pmap"
+  print(""..norns.state.data)
   print(">> reading PMAP "..filename)
   local fd = io.open(filename, "r")
   if fd then
