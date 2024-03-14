@@ -3,7 +3,8 @@
 -- Website: http://www.math.ntnu.no/~stacey/HowDidIDoThat/iPad/Codea.html
 -- Licence: CC0 http://wiki.creativecommons.org/CC0
 
-local Button = {}
+Button = {}
+Button.__index = Button
 
 function Button:init(t)
     t = t or {}
@@ -30,6 +31,8 @@ function Button:init(t)
     end
     self.action = t.action or function() end
     self.finalAction = t.finalAction or function() end
+    setmetatable(Button, {__index = Button})
+    setmetatable(button, Button)
 end
 
 function Button:draw()

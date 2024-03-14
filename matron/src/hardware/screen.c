@@ -346,6 +346,19 @@ void screen_rgblevel(int r, int g, int b) {
     cairo_set_source_rgb(cr, cred[r], cgreen[g], cblue[b]);
 }
 
+
+void screen_hexrgblevel(int hexValue){
+    CHECK_CR    
+    int r = 0;
+    int g = 0;
+    int b = 0;
+
+    r = ((hexValue >> 16) & 0xFF) / 255.0 * 15;  // Extract the RR byte
+    g = ((hexValue >> 8) & 0xFF) / 255.0 * 15;   // Extract the GG byte
+    b = ((hexValue) & 0xFF) / 255.0 * 15;        // Extract the BB byte
+    cairo_set_source_rgb(cr,cred[r], cgreen[g], cblue[b]);
+}
+
 void screen_line_width(double w) {
     CHECK_CR
     cairo_set_line_width(cr, w);

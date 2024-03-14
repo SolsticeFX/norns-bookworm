@@ -204,17 +204,13 @@ void* touch_dsi_poll(void* data) {
                         event_post(evtap);
 
                     }
-                    else {
+                    
                     //RELEASE
                         union event_data *evrelease = event_data_new(EVENT_RELEASE);
                         evrelease->release.x = tinput.last_x;
                         evrelease->release.y = tinput.last_y;
                         event_post(evrelease);
-
-
-
-                    }
-                    
+                                        
                 tinput.start_x = 0;
                 tinput.start_y = 0;
                 tinput.press = 0;

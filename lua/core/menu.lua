@@ -130,7 +130,7 @@ end
 
 _menu.drag = function(gx,gy,start_x,start_y,last_x,last_y)
 
-if(start_y<40) and _menu.mode==true then
+if(start_y<40) and (_menu.mode or _menu.paramMode) then
 
   local c = util.clamp(math.floor(gx/200)+1,1,4)
   if c ~= _menu.panel then
@@ -142,11 +142,24 @@ else _menu.pdrag(gx,gy,start_x,start_y,last_x,last_y) end
 
 end
 
-_norns.release = function(x,y) end
+_menu.press = function(gx,gy) 
+
+  _menu.ppress(gx,gy) 
+ 
+end
+
+
+
+
+_menu.release = function(gx,gy) 
+
+   _menu.prelease(gx,gy) 
+  
+end
 
 _menu.tap = function( gx, gy)
 
-    if(gy<40) and _menu.mode==true then
+    if(gy<40) and (_menu.mode or _menu.paramMode) then
       local c = util.clamp(math.floor(gx/200)+1,1,4)
       if c ~= _menu.panel then
         _menu.panel = c
@@ -162,7 +175,7 @@ _menu.tap = function( gx, gy)
   end
 
 _menu.enc = function(n, delta)
-  if n==1 and _menu.alt == false and _menu.mode then
+  if n==1 and _menu.alt == false and (_menu.mode or _menu.paramMode) then
     --mix:delta("output",delta)
     local c = util.clamp(_menu.panel+delta,1,4)
     if c ~= _menu.panel then
@@ -185,7 +198,7 @@ _norns.key = function(n, z)
       t:start()
     elseif z == 0 and pending == true then
       _menu.alt = false
-      if _menu.mode == true and _menu.locked == false then
+      if _menu.mode and _menu.locked == false then
         _menu.set_mode(false)
       else _menu.set_mode(true) end
       t:stop()
@@ -202,9 +215,9 @@ _norns.key = function(n, z)
       _menu.alt = true
       pending = true
       t:start()
-    elseif z == 0 and pending == true then
+    elseif z == 0 and pending then
       _menu.alt = false
-      if _menu.paramMode == true and _menu.locked == false then
+      if _menu.paramMode and _menu.locked == false then
         _menu.set_param_mode(false)
       else _menu.set_param_mode(true) end
       t:stop()
@@ -212,7 +225,7 @@ _norns.key = function(n, z)
     elseif z == 0 then
       _menu.alt = false
       _menu.key(n,z) -- always 1,0
-      if _menu.paramMode == true then _menu.redraw() end
+      if _menu.paramMode then _menu.redraw() end
     else
       _menu.key(n,z) -- always 1,1
     end
@@ -243,6 +256,7 @@ _menu.set_mode = function(mode)
   elseif mode == true then -- ACTIVATE MENu MODE
     if _menu.mode == false then _norns.screen_save() end
     _menu.mode = true
+    _menu.paramMode = false
     _menu.alt = false
     redraw = norns.none
     screen.font_face(1)
@@ -260,12 +274,13 @@ _menu.set_mode = function(mode)
     norns.encoders.set_sens(2,2)
     norns.encoders.set_accel(3,true)
     norns.encoders.set_sens(3,2)
-    _menu.set_page(_menu.page)
+    _menu.panel = 3
+    _menu.set_page(_menu.panels[_menu.panel])
   end
 end
 
 _menu.set_param_mode = function(mode)
-  if mode == false then -- ACTIVATE PLAY MODE
+  if paramMode == false then -- ACTIVATE PLAY MODE
     if _menu.paramMode == true then _norns.screen_restore() end
     _menu.paramMode = false
     m[_menu.page].deinit()
@@ -280,9 +295,10 @@ _menu.set_param_mode = function(mode)
     norns.touchrelease.callback = release
     norns.enc.resume()
     redraw()
-  elseif mode == true then -- ACTIVATE MENu MODE
+  elseif mode == true then -- ACTIVATE PARAM MODE
     if _menu.paramMode == false then _norns.screen_save() end
     _menu.paramMode = true
+    _menu.mode = false
     _menu.alt = false
     redraw = norns.none
     screen.font_face(1)
@@ -299,7 +315,8 @@ _menu.set_param_mode = function(mode)
     norns.encoders.set_sens(2,2)
     norns.encoders.set_accel(3,true)
     norns.encoders.set_sens(3,2)
-    _menu.set_page(("PARAMS"))
+    _menu.panel = 4
+    _menu.set_page(_menu.panels[_menu.panel])
   end
 end
 

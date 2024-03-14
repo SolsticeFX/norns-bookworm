@@ -100,6 +100,7 @@ static int _screen_rlevel(lua_State *l);
 static int _screen_glevel(lua_State *l);
 static int _screen_blevel(lua_State *l);
 static int _screen_rgblevel(lua_State *l);
+static int _screen_hexrgblevel(lua_State *l);
 static int _screen_line_width(lua_State *l);
 static int _screen_line_cap(lua_State *l);
 static int _screen_line_join(lua_State *l);
@@ -453,6 +454,7 @@ void w_init(void) {
     lua_register_norns("screen_glevel", &_screen_glevel);
     lua_register_norns("screen_blevel", &_screen_blevel);
     lua_register_norns("screen_rgblevel", &_screen_rgblevel);
+    lua_register_norns("screen_hexrgblevel", &_screen_hexrgblevel);
     lua_register_norns("screen_line_width", &_screen_line_width);
     lua_register_norns("screen_line_cap", &_screen_line_cap);
     lua_register_norns("screen_line_join", &_screen_line_join);
@@ -747,7 +749,13 @@ int _screen_rgblevel(lua_State *l) {
     return 0;
 }
 
-
+int _screen_hexrgblevel(lua_State *l) {
+    lua_check_num_args(1);
+    int hexValue = (int)luaL_checkinteger(l, 1);
+    screen_hexrgblevel(hexValue);
+    lua_settop(l, 0);
+    return 0;
+}
 
 
 /***

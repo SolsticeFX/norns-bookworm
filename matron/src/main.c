@@ -34,6 +34,24 @@
 #include "oracle.h"
 #include "weaver.h"
 
+//#define IOCPARM_SHIFT   13              /* number of bits for ioctl size */
+//#define IOCPARM_MASK    ((1 << IOCPARM_SHIFT) - 1) /* parameter length mask */
+//#define IOCPARM_LEN(x)  (((x) >> 16) & IOCPARM_MASK)
+//#define IOCBASECMD(x)   ((x) & ~(IOCPARM_MASK << 16))
+//#define IOCGROUP(x)     (((x) >> 8) & 0xff)
+
+//#define IOCPARM_MAX     (1 << IOCPARM_SHIFT) /* max size of ioctl */
+
+//#define IOC_VOID        0x20000000UL    /* no parameters */
+//#define IOC_DIRMASK     (IOC_VOID|IOC_OUT|IOC_IN)/* mask for IN/OUT/VOID */
+
+//#define _IOWINT(g,n)    _IOC(IOC_VOID,  (g), (n), sizeof(int))
+//#define KDSETMODE       _IOWINT('K', 10)
+//#define KD_GRAPHICS     1
+
+//ioctl(priv->fb_fd, KDSETMODE, KD_GRAPHICS);
+
+
 void print_version(void);
 
 void cleanup(void) {
@@ -41,7 +59,6 @@ void cleanup(void) {
     osc_deinit();
     o_deinit();
     w_deinit();
-
     config_deinit();
     i2c_deinit();
     battery_deinit();
@@ -53,7 +70,7 @@ void cleanup(void) {
 
 int main(int argc, char **argv) {
     args_parse(argc, argv);
-
+//ioctl(0, KDSETMODE, KD_GRAPHICS);
     print_version();
     init_platform();
     printf("platform: %d\n",platform());

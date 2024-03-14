@@ -13,13 +13,9 @@ local lib = norns..'/lib/?.lua;'
 local softcut = norns..'/softcut/?.lua;'
 local dust = home..'/dust/code/?.lua;'
 
---for Solstice apps
---local stardust = home..'/stardust/code/?.lua;'
+
 
 package.path = sys..core..engine..params..lib..softcut..dust..package.path
-
---package.path = sys..core..engine..params..lib..softcut..dust..stardust..package.path
--- print('package.path: ' .. package.path)
 
 -- must be done after package path is set
 local tu = require 'tabutil'

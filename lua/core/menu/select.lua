@@ -247,7 +247,7 @@ m.remove_favorite = function()
     if v.file == m.list[home_tabs.index][m.pos[home_tabs.index]+1].file then
       table.remove(m.favorites[home_tabs.index], i)
       if(home_tabs.index==1) then
-        print('soldel')
+        
         tabutil.save(m.favorites[home_tabs.index], paths.solsticefavorites)
       else
         print('regdel')

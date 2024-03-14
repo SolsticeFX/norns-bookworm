@@ -75,7 +75,12 @@ _norns.report.did_engine_load = function() end
 
 -- startup handlers.
 _norns.startup_status = {}
-_norns.startup_status.ok = function() print(">>> startup ok") end
+
+_norns.startup_status.ok = function() 
+  print(">>> startup ok") 
+  encoders.load_colors()
+end
+
 _norns.startup_status.timeout = function() print(">>> startup timeout") end
 
 -- poll callback; used by C interface.
@@ -84,8 +89,8 @@ _norns.poll = function(id, value)
    local p = poll.polls[name]
    if p then
     p:perform(value)
-   else
-    print ("warning: norns.poll callback couldn't find poll")
+   --else
+   -- print ("warning: norns.poll callback couldn't find poll")
    end
 end
 

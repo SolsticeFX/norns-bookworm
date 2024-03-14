@@ -45,6 +45,12 @@ m.drag = function(x,y,sx,sy,lx,ly)
   _menu.redraw()
 end
 
+m.tap = function(x,y) 
+    _menu.redraw()
+    norns.script.load(_menu.previewfile)
+end
+
+
 m.redraw = function()
   screen.clear()
   screen.level(15)

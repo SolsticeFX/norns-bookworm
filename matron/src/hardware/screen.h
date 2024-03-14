@@ -17,6 +17,7 @@ extern void screen_rlevel(int r);
 extern void screen_glevel(int g);
 extern void screen_blevel(int b);
 extern void screen_rgblevel(int r, int g, int b);
+extern void screen_hexrgblevel(int hexValue);
 extern void screen_line_width(double w);
 extern void screen_line_cap(const char *style);
 extern void screen_line_join(const char *style);

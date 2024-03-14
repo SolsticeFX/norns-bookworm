@@ -39,6 +39,7 @@ end
 --- Redraw Pages.
 -- Call when changed.
 function Pages:redraw()
+  print("reeeeeeeeee")
   local dot_height = util.clamp(util.round(64 / self.num_pages - 2), 1, 4)
   local dot_gap = util.round(util.linlin(1, 4, 1, 2, dot_height))
   local dots_y = util.round((64 - self.num_pages * dot_height - (self.num_pages - 1) * dot_gap) * 0.5)

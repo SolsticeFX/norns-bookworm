@@ -49,7 +49,10 @@ Screen.update = Screen.update_default
 Screen.aa = function(state) _norns.screen_aa(state) end
 
 --- clear.
-Screen.clear = function() _norns.screen_clear() end
+Screen.clear = function() 
+  --ButtonList = {}
+  _norns.screen_clear() 
+end
 
 --- set level (color/brightness).
 -- @tparam number value 0-15 (0=off, 15=white)
@@ -67,11 +70,12 @@ Screen.blevel = function(value) _norns.screen_blevel(value) end
 --- set rgb level (color/brightness).
 -- @tparam r,g,b values 0-15 (0=off, 15=max)
 Screen.rgblevel = function(r,g,b) _norns.screen_rgblevel(r,g,b) end
-
+--- set rgb level (color/brightness).
+-- @tparam hex value 0x000000-0xFFFFFF)
+Screen.hexrgblevel = function(hexValue) _norns.screen_hexrgblevel(hexValue) end
 --- set line width.
 -- @tparam number w line width (in pixels, floats permitted)
 Screen.line_width = function(w) _norns.screen_line_width(w) end
-
 --- set line cap style.
 -- @param style line cap style string ("butt", "round" or "square"). default is "butt".
 Screen.line_cap = function(style)

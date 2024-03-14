@@ -14,6 +14,8 @@ touchrelease.process = function(gx ,gy)
   touchrelease.callback(gx,gy)
 end
 
-
+touchrelease.cb = function(cbin)
+  print(cbin)
+end
 
 return touchrelease

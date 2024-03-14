@@ -14,6 +14,11 @@ state.shortname = ''
 state.clean_shutdown = false
 state.battery_warning = 1
 state.led_brightness = 255
+state.ui_colors = {}
+state.ui_colors[1]=0xFFFF00
+state.ui_colors[2]=0xFF0000
+state.ui_colors[3]=0x00FF00
+state.ui_colors[4]=0x0000FF
 
 state.mix = {}
 state.mix.output = 0
@@ -60,6 +65,7 @@ state.clock.crow_out = 1
 state.clock.crow_out_div = 4
 state.clock.crow_in_div = 4
 
+
 -- read state.lua and set parameters back to stored vals.
 state.resume = function()
   -- restore state object
@@ -74,6 +80,8 @@ state.resume = function()
   if type(state.clock.midi_out) == 'number' then
     state.clock.midi_out = {}
   end
+
+  
 
   -- update vports
   midi.update_devices()
@@ -118,10 +126,12 @@ state.save_state = function()
   io.write("norns.state.shortname = '" .. state.shortname .. "'\n")
   io.write("norns.state.path = '" .. state.path .. "'\n")
   io.write("norns.state.data = '" .. state.data .. "'\n")
-  --io.write("norns.state.stardustpath = '" .. state.stardustpath .. "'\n")
-  --io.write("norns.state.stardustdata = '" .. state.stardustdata .. "'\n")
   io.write("norns.state.battery_warning = " .. state.battery_warning .. "\n")
   io.write("norns.state.led_brightness = " .. state.led_brightness .. "\n")
+  io.write("norns.state.ui_colors_1 = " .. state.ui_colors[1] .. "\n")
+  io.write("norns.state.ui_colors_2 = " .. state.ui_colors[2] .. "\n")
+  io.write("norns.state.ui_colors_3 = " .. state.ui_colors[3] .. "\n")
+  io.write("norns.state.ui_colors_4 = " .. state.ui_colors[4] .. "\n")
   io.write("norns.state.mix.output = " .. norns.state.mix.output .. "\n")
   io.write("norns.state.mix.input = " .. norns.state.mix.input .. "\n")
   io.write("norns.state.mix.monitor = " .. norns.state.mix.monitor .. "\n")

@@ -114,6 +114,9 @@ Script.clear = function()
 
   norns.version.required = nil
 
+--ButtonList = {}
+--DialList = {}
+
   -- clear params
   params:clear()
   norns.pmap.clear()

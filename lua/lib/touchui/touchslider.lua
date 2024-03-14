@@ -72,11 +72,25 @@ end
 -- @tparam boolean state Boolean, true for active.
 function Slider:set_active(state)
   self.active = state
+  print("act0i"..state)
 end
+
+
+--m.enc = function(n,delta)
+ -- print("enci"..n)
+--end
+
+
+function Slider:enc(n,delta)
+ print("enci"..n)
+end
+
+
 
 --- Redraw Slider.
 -- Call when changed.
 function Slider:redraw()
+  print("reeee")
   screen.line_width(0.4)
 
   screen.level(6)

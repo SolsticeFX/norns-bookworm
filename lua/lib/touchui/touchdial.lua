@@ -4,6 +4,7 @@
 
 Dial = {}
 Dial.__index = Dial
+DialList = {}
 
 --- Create a new Dial object.
 -- @tparam number x X position, defaults to 0.
@@ -19,7 +20,7 @@ Dial.__index = Dial
 -- @tparam string title String to be displayed instead of value text.
 -- @treturn Dial Instance of Dial.
 
-function Dial.new(x, y, size, value, min_value, max_value, rounding, start_value, markers, units, title, encoder)
+function Dial.new(x, y, size, value, min_value, max_value, rounding, start_value, markers, units, title, encoder, tapcallback)
   local markers_table = markers or {}
   min_value = min_value or 0
   local dial = {
@@ -34,6 +35,7 @@ function Dial.new(x, y, size, value, min_value, max_value, rounding, start_value
     units = units,
     title = title or nil,
     encoder = encoder or 0,
+    tapcallback = tapcallback,
     active = true,
     _start_angle = math.pi * 0.7,
     _end_angle = math.pi * 2.3,
@@ -46,8 +48,55 @@ function Dial.new(x, y, size, value, min_value, max_value, rounding, start_value
   for k, v in pairs(markers_table) do
     dial:set_marker_position(k, v)
   end
+  drag =  Dial.drag
+  --tap = Dial.tap
+  --press = Dial.press
+  --release = Dial.release
+  enc = Dial.enc
+  table.insert(DialList, dial)
   return dial
 end
+
+Dial.tap=function(x,y)
+
+   for i=1,#DialList do
+    if (x - DialList[i].x)^2 + (y - DialList[i].y)^2 < (DialList[i].size)^2 then
+      DialList[i].tapcallback()
+    end
+    --  if ((x>DialList[i].x-DialList[i].width/2) and (y>DialList[i].y-DialList[i].height/2) and (x<(DialList[i].x+DialList[i].width/2)) and (y<(DialList[i].y+DialList[i].height/2))) then
+       -- DialList[i].pressed = true
+        --print("Dial Pressed: ".. i)
+        --DialList[i].callback()
+   --   end
+   end
+end
+
+
+Dial.enc=function(n,delta)
+  for i=1,#DialList do
+    if DialList[i].encoder == n and DialList[i].active then
+      DialList[i]:set_value_delta(delta)
+    end
+  end
+end
+
+Dial.drag=function(gx ,gy, start_x, start_y, last_x, last_y)
+  start_x=start_x/800*128
+  start_y=start_y/480*70
+  gy=gy/480*70
+  last_y=last_y/480*70
+  
+  for i=1,#DialList do
+    --radius = (DialList[i].size)/2
+    if (start_x - DialList[i].x)^2 + (start_y - DialList[i].y)^2 < (DialList[i].size)^2 then
+      number = DialList[i].value-gy+last_y
+      DialList[i].value = util.clamp(number, DialList[i].min_value, DialList[i].max_value)
+      DialList[i]:redraw()
+  end
+end
+
+end
+
 
 --- Set value.
 -- @tparam number number Value number.
@@ -106,6 +155,8 @@ function Dial:redraw()
   screen.arc(self.x + radius, self.y + radius, radius - 0.5, self._start_angle, self._end_angle)
   screen.stroke()
   
+ 
+
   for _, v in pairs(self._marker_points) do
     screen.move(v.x1, v.y1)
     screen.line(v.x2, v.y2)
@@ -113,8 +164,13 @@ function Dial:redraw()
   end
   
   --screen.level(15)
-  if self.active and self.encoder > 0 then
-    norns.encoders.set_rgb(self.encoder)
+  if self.active then
+    --print(norns.encoders.get_color(self.encoder))
+    screen.hexrgblevel(norns.encoders.get_active_color(self.encoder))
+   -- norns.encoders.set_rgb(self.encoder)
+  else
+    screen.hexrgblevel(norns.encoders.get_inactive_color(self.encoder))
+
   end
 
   screen.line_width(2.5)
