@@ -33,6 +33,18 @@ for i=1,16 do
     song_select = vport.wrap_method('song_select'),
   }
 end
+function dump(o)
+  if type(o) == 'table' then
+     local s = '{ '
+     for k,v in pairs(o) do
+        if type(k) ~= 'number' then k = '"'..k..'"' end
+        s = s .. '['..k..'] = ' .. dump(v) .. ','
+     end
+     return s .. '} '
+  else
+     return tostring(o)
+  end
+end
 
 --- constructor
 -- @tparam integer id : arbitrary numeric identifier
@@ -258,6 +270,7 @@ end
 -- @treturn table msg : midi message table, contents vary depending on message
 function Midi.to_msg(data)
   local msg = {}
+  print(data[1])
   -- note on
   if data[1] & 0xf0 == 0x90 then
     msg = {
@@ -345,10 +358,13 @@ function Midi.to_msg(data)
       -- do nothing
   -- system exclusive
   elseif data[1] == 0xf0 then
+    print('nononon')
+
     msg = {
       type = "sysex",
       raw = data,
     }
+    
   -- everything else
   else
     msg = {
@@ -356,6 +372,7 @@ function Midi.to_msg(data)
       raw = data,
     }
   end
+    print(dump(data))
   return msg
 end
 
@@ -429,7 +446,9 @@ _norns.midi.event = function(id, data)
   if d ~= nil then
     if d.event ~= nil then
       d.event(data)
+      
     end
+    
 
     if d.port then
       if Midi.vports[d.port].event then
@@ -439,6 +458,7 @@ _norns.midi.event = function(id, data)
       norns.menu_midi_event(data, d.port)
     end
   else
+    
     error('no entry for midi '..id)
   end
 

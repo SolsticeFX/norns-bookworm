@@ -94,7 +94,7 @@ Dial.drag=function(gx ,gy, start_x, start_y, last_x, last_y)
       DialList[i]:redraw()
   end
 end
-
+Tabs.drag(gx ,gy, start_x, start_y, last_x, last_y)
 end
 
 

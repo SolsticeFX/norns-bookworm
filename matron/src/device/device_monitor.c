@@ -151,10 +151,13 @@ int dev_monitor_scan(void) {
             dev = udev_device_new_from_syspath(udev, path);
 
             if (dev != NULL) {
+                
+                fprintf(stderr, udev_device_get_subsystem(dev));
                 if (udev_device_get_parent_with_subsystem_devtype(dev, "usb", NULL)) {
                     add_dev(dev, fidx);
                 }
             }
+            
             udev_device_unref(dev);
         }
 
@@ -235,6 +238,7 @@ void rm_dev_tty(struct udev_device *dev, const char *node) {
         return;
     }
 
+
     if (is_dev_monome_grid(dev)) {
         fprintf(stderr, "tty appears to be ACM grid\n");
         dev_list_remove(DEV_TYPE_MONOME, node);
@@ -277,7 +281,9 @@ void add_dev_tty(struct udev_device *dev) {
     if (fnmatch("/dev/ttyUSB*", node, 0) == 0) {
         fprintf(stderr, "got ttyUSB, assuming grid\n");
         dev_list_add(DEV_TYPE_MONOME, node, name);
-    } else if (is_dev_monome_grid(dev)) {
+    } 
+
+     else if (is_dev_monome_grid(dev)) {
         fprintf(stderr, "tty appears to be grid-st\n");
         dev_list_add(DEV_TYPE_MONOME, node, name);
     } else if (is_dev_crow(dev)) {

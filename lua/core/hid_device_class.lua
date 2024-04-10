@@ -24,6 +24,25 @@ HidDeviceClass.is_ascii_keyboard = function(device)
     return true
 end
 
+HidDeviceClass.is_pedalboard= function(device)
+    local types_inv = tab.invert(device.types)
+    local type_key = hid_events.types.EV_KEY
+    --- an ascii keyboard should support key events
+    if types_inv[type_key] == nil then
+        return false
+    end
+    local key_codes_inv = tab.invert(device.codes[type_key])
+    -- hacky magic numbers;
+    -- codes for ascii key events happen to be in this range:
+    for i=1,58 do
+        if key_codes_inv[i] == nil then
+            return false
+        end
+    end
+    return true
+end
+
+
 HidDeviceClass.is_mouse = function(device)
     local types_inv = tab.invert(device.types)
     local type_key = hid_events.types.EV_KEY

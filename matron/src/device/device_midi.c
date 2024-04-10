@@ -191,6 +191,10 @@ static inline void midi_input_msg_post(midi_input_state_t *state, struct dev_mid
     for (uint8_t n = 0; n < state->msg_len; n++) {
         ev->midi_event.data[n] = state->msg_buf[n];
     }
+    fprintf(stderr, "posting midi event; byte count = %d\n", state->msg_len);
+    if(state->msg_sysex){
+    fprintf(stderr, "SYSEX");
+    }
     event_post(ev);
 }
 
@@ -201,6 +205,9 @@ static inline void midi_input_msg_start(midi_input_state_t *state, uint8_t statu
     state->msg_buf[state->msg_pos++] = status;
     state->msg_sysex = status == 0xf0;
 
+    if(state->msg_sysex){
+    fprintf(stderr, "SYSEX");
+    }
     // save for running status
     if (!is_status_real_time(status)) {
         state->prior_status = status;
@@ -214,9 +221,11 @@ static inline void midi_input_msg_end(midi_input_state_t *state) {
 }
 
 static inline void midi_input_msg_acc(midi_input_state_t *state, uint8_t byte) {
+
     if (!state->msg_started) {
         if (state->msg_sysex) {
             // continue to pass sysex through in 3 byte chunks
+        
             state->msg_started = true;
             state->msg_pos = 0;
             state->msg_len = 3;
@@ -308,5 +317,6 @@ void *dev_midi_start(void *self) {
 
 ssize_t dev_midi_send(void *self, uint8_t *data, size_t n) {
     struct dev_midi *midi = (struct dev_midi *)self;
+    fprintf(stderr, "snd raw write \n");
     return snd_rawmidi_write(midi->handle_out, data, n);
 }

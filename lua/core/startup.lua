@@ -132,7 +132,10 @@ print("start_usb_audio(): ")
 --os.execute("jack_connect system:capture_1 alsa_out:playback_1")
 --os.execute("jack_connect system:capture_2 alsa_out:playback_2")
 os.execute("/home/we/usb_audio.sh")
-
+--os.execute(jack_connect "solsticedev:MIDI_out" "a2j:Client-130 (capture): Virtual RawMIDI")
+--os.execute(jack_connect "solsticedev:MIDI_in" "a2j:Client-130 (playback): Virtual RawMIDI")
+os.execute("jack_connect 'solsticedev:MIDI_out' 'a2j:Client-130 (capture): Virtual RawMIDI'")
+os.execute("jack_connect 'solsticedev:MIDI_in' 'a2j:Client-130 (playback): Virtual RawMIDI'")
 
 -- load matron mods and invoke system hooks
 local mods = require 'core/mods'

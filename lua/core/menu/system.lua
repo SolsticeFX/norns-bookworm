@@ -1,7 +1,7 @@
 local m = {
   pos = 1,
-  list = {"SETTINGS", "DEVICES", "MODS", "UPDATE", "LOG"},
-  pages = {"SETTINGS", "DEVICES", "MODS", "UPDATE", "LOG"},
+  list = {"ABOUT", "SETTINGS", "DEVICES", "MODS", "UPDATE", "LOG"},
+  pages = {"ABOUT", "SETTINGS", "DEVICES", "MODS", "UPDATE", "LOG"},
   listTicker = 0
 }
 

@@ -10,17 +10,17 @@
 function include(file)
   local dirs = {norns.state.path, _path.code, _path.extn, _path.globallib}
   for _, dir in ipairs(dirs) do
-    print (dir)
+   -- print (dir)
     local p = dir..file..'.lua'
-    print(p)
+   -- print(p)
     if util.file_exists(p) then
-      print("including "..p)
+    --  print("including "..p)
       return dofile(p)
     end
   end
 
   -- didn't find anything
-  print("### MISSING INCLUDE: "..file)
+ -- print("### MISSING INCLUDE: "..file)
   error("MISSING INCLUDE: "..file,2)
 end
 

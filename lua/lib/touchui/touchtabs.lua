@@ -6,6 +6,7 @@
 
 Tabs = {}
 Tabs.__index = Tabs
+TabsList = {}
 
 --- Create a new Tabs object.
 -- @tparam number index Selected tab, defaults to 1.
@@ -19,6 +20,7 @@ function Tabs.new(index, titles, active)
   }
   setmetatable(Tabs, {__index = Tabs})
   setmetatable(tabs, Tabs)
+  table.insert(TabsList, tabs)
   return tabs
 end
 
@@ -41,6 +43,27 @@ function Tabs:set_index_delta(delta, wrap)
   self:set_index(index)
 end
 
+
+Tabs.drag=function(gx,gy,start_x,start_y,last_x,last_y)
+
+    if(start_y<40)then
+    print("weeee")
+    for i=1,#TabsList do
+      print("weeee ".. i )
+      local c = util.clamp(math.floor(gx/(800/#TabsList[i].titles))+1,1,#TabsList[i].titles)
+      if c ~= TabsList[i].index then
+        TabsList[i]:set_index(c)
+      end
+    end
+      --  _menu.panel = c
+      --  _menu.set_page(_menu.panels[_menu.panel])
+      --end
+    
+ --   else _menu.pdrag(gx,gy,start_x,start_y,last_x,last_y) end
+    
+    end
+  end
+    
 --- Redraw Tabs.
 -- Call when changed.
 function Tabs:redraw()
