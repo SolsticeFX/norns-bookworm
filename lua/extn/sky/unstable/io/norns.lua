@@ -11,7 +11,7 @@ NornsInput.TOUCH_EVENT = 'TOUCH'
 NornsInput.PRESS_EVENT = 'PRESS'
 NornsInput.RELEASE_EVENT = 'RELEASE'
 NornsInput.TAP_EVENT = 'TAP'
-NornsInput.DRAG_EVENT = 'DRAG'
+NornsInput.DRAG_EVENT = 'DRAG'ƒ
 NornsInput.REDRAW_EVENT = 'REDRAW'
 
 local SingletonInput = nil

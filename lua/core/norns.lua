@@ -25,6 +25,8 @@ _norns.key = function(n,z) end
 -- enc callback
 _norns.enc = function(n,delta) end
 
+_norns.sysex = function(id, data, size) end
+
 _norns.touch = function(slot,press,x,y) end
 _norns.press = function(x,y) end
 _norns.release = function(x,y) end
@@ -79,6 +81,7 @@ _norns.startup_status = {}
 _norns.startup_status.ok = function() 
   print(">>> startup ok") 
   encoders.load_colors()
+  --pedalencoders.load_colors()
 end
 
 _norns.startup_status.timeout = function() print(">>> startup timeout") end
@@ -141,6 +144,8 @@ end
 norns.script = require 'core/script'
 norns.state = require 'core/state'
 norns.encoders = require 'core/encoders' 
+norns.pedalencoders = require 'core/pedalencoders' 
+norns.systemexclusive = require 'core/systemexclusive'
 norns.touchscreen =  require 'core/touchscreen'
 norns.touchpress =  require 'core/touchpress'
 norns.touchrelease =  require 'core/touchrelease'
@@ -150,6 +155,8 @@ norns.touchdrag =  require 'core/touchdrag'
 
 
 _norns.enc = norns.encoders.process
+_norns.pedalenc = norns.pedalencoders.process
+_norns.sysex = norns.systemexclusive.process
 _norns.press = norns.touchpress.process
 _norns.release = norns.touchrelease.process
 _norns.tap = norns.touchtap.process

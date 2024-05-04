@@ -105,6 +105,8 @@ if util.file_exists(_path.home .. "/reverse.txt") then
   os.execute("jack_connect 'system:capture_1' 'crone:input_2'")
   os.execute("jack_connect 'system:capture_2' 'crone:input_1'")
 end
+
+
   os.execute("sudo sh -c \"TERM=linux setterm -foreground black -clear all >/dev/tty0\"")
   os.execute("jack_disconnect 'mod-monitor:out_1' 'system:playback_1'")
   os.execute("jack_disconnect 'mod-monitor:out_2' 'system:playback_2'")
@@ -112,6 +114,7 @@ end
   --  os.execute("jack_disconnect 'system:capture_2' 'crone:input_2'")
   os.execute("jack_connect 'mod-monitor:out_1' 'crone:input_1'")
   os.execute("jack_connect 'mod-monitor:out_2' 'crone:input_2'")
+
 
 -- USB Audio
 
@@ -131,11 +134,14 @@ print("start_usb_audio(): ")
 --os.execute("jack_connect crone:output_2 alsa_out:playback_2")
 --os.execute("jack_connect system:capture_1 alsa_out:playback_1")
 --os.execute("jack_connect system:capture_2 alsa_out:playback_2")
-os.execute("/home/we/usb_audio.sh")
+os.execute("/home/we/norns/scripts/usb_audio.sh")
+os.execute("aconnect solsticedev Client-131")
+os.execute("aconnect Client-131 solsticedev:1")
+
 --os.execute(jack_connect "solsticedev:MIDI_out" "a2j:Client-130 (capture): Virtual RawMIDI")
 --os.execute(jack_connect "solsticedev:MIDI_in" "a2j:Client-130 (playback): Virtual RawMIDI")
-os.execute("jack_connect 'solsticedev:MIDI_out' 'a2j:Client-130 (capture): Virtual RawMIDI'")
-os.execute("jack_connect 'solsticedev:MIDI_in' 'a2j:Client-130 (playback): Virtual RawMIDI'")
+--os.execute("jack_connect 'solsticedev:MIDI_out' 'a2j:Client-130 (capture): Virtual RawMIDI'")
+--os.execute("jack_connect 'solsticedev:MIDI_in' 'a2j:Client-130 (playback): Virtual RawMIDI'")
 
 -- load matron mods and invoke system hooks
 local mods = require 'core/mods'

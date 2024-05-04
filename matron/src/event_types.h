@@ -63,6 +63,8 @@ typedef enum {
     EVENT_MIDI_REMOVE,
     // midi event
     EVENT_MIDI_EVENT,
+    // midi sysex event
+    EVENT_MIDI_SYSEX_EVENT,
     // incoming OSC event
     EVENT_OSC,
     // finished receiving audio engine list
@@ -201,6 +203,13 @@ struct event_midi_event {
     uint8_t data[3];
     size_t nbytes;
 }; // +11
+
+struct event_midi_sysex_event {
+    struct event_common common;
+    uint32_t id;
+    uint8_t data[6];
+    size_t nbytes;
+}; // +14
 
 struct event_osc {
     struct event_common common;
@@ -406,6 +415,7 @@ union event_data {
     struct event_midi_add midi_add;
     struct event_midi_remove midi_remove;
     struct event_midi_event midi_event;
+    struct event_midi_sysex_event midi_sysex_event;
     struct event_osc osc_event;
     struct event_key key;
     struct event_enc enc;

@@ -120,7 +120,7 @@ void norns_hello_start() {
     if (thread_running) {
         return;
     }
-    system("python3 /home/we/boot.py");
+    system("python3 /home/we/norns/scripts/boot.py");
     srand(time(NULL));
     screen_aa(1);
     screen_line_width(1);
@@ -145,7 +145,7 @@ void norns_hello_start() {
 
 void norns_hello_ok() {
     ok = 1;
-    system("python3 /home/we/postboot.py");
+    system("python3 /home/we/norns/scripts/postboot.py");
 }
 
 int norns_hello(int live) {

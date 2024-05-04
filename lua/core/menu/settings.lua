@@ -34,7 +34,7 @@ m.enc = function(n,delta)
     norns.state.led_brightness = util.clamp(norns.state.led_brightness + delta, 0, 100)
     C = 255
     --os.execute("python3 /home/we/leds.py "..(255 * math.log(norns.state.led_brightness*2.55/C + 1) / math.log(255/C + 1)))
-    os.execute("python3 /home/we/leds.py "..(2^(norns.state.led_brightness/13)))
+    os.execute("python3 /home/we/norns/scripts/leds.py "..(2^(norns.state.led_brightness/13)))
 
     screen.update = screen.update_default
     _menu.redraw()

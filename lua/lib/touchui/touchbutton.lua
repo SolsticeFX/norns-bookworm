@@ -40,8 +40,8 @@ end
 function Button:tap(x,y)
   y=y/480*64
   --if ((x>self.x-self.width/2) and (y>self.y-self.height/2) and (x<(self.x+self.width/2)) and (y<(self.y+self.height/2))) then
-  print("TAP1")
-  print("HIHIHI")
+  --print("TAP1")
+  --print("HIHIHI")
   --callback()
   
 --end 

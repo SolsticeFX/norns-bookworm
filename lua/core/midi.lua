@@ -2,7 +2,9 @@
 -- @module midi
 
 local vport = require 'vport'
-
+local tab = require 'tabutil'
+local paramset = require 'core/paramset'
+local util = require 'util'
 local Midi = {}
 Midi.__index = Midi
 
@@ -95,7 +97,6 @@ function Midi.remove(dev) end
 function Midi:send(data)
   if data.type then
     local d = Midi.to_data(data)
-    _norns.midi_send(self.dev, d)
   else
     _norns.midi_send(self.dev, data)
   end
@@ -259,6 +260,7 @@ local to_data = {
 -- @treturn table data : table of midi status and data bytes
 function Midi.to_data(msg)
   if msg.type then
+    print("hey")
     return to_data[msg.type](msg)
   else
     error('failed to serialize midi message')
@@ -270,7 +272,6 @@ end
 -- @treturn table msg : midi message table, contents vary depending on message
 function Midi.to_msg(data)
   local msg = {}
-  print(data[1])
   -- note on
   if data[1] & 0xf0 == 0x90 then
     msg = {
@@ -355,22 +356,59 @@ function Midi.to_msg(data)
     }
   -- active sensing (should probably ignore)
   elseif data[1] == 0xfe then
-      -- do nothing
+ 
   -- system exclusive
   elseif data[1] == 0xf0 then
-    print('nononon')
-
+    
+    sysexn = data[3]
+    sysexdelta = data[5]
     msg = {
       type = "sysex",
-      raw = data,
+      raw = data
     }
-    
+
+
+    if data[2] == 0x0a then
+    elseif data[2] == 0x0b then
+
+
+      if data[4] == 0x2 then
+        print('anticlockwise')
+        print('n'..sysexn)
+        print('delta'..data[4])
+        if sysexn == 1 then
+          _norns.pedalenc(sysexn, -1)
+          else
+            _norns.pedalenc(sysexn, -sysexdelta)
+          end
+  
+        --norns.enc(sysexn,sysexdelta)
+      elseif data[4] == 0x1 then 
+        print('clockwise')
+        print('n'..sysexn)
+        print('delta'..sysexdelta)
+        if sysexn == 1 then
+        _norns.pedalenc(sysexn, 1)
+        else
+          _norns.pedalenc(sysexn, sysexdelta)
+        end
+      end
+
+
+    elseif data[2] == 0x0c then
+        _norns.key(sysexn, sysexdelta)
+    else
+      print('huh')
+    end
+
   -- everything else
   else
+    if data[1] ~= 0xf7 then
     msg = {
       type = "other",
       raw = data,
     }
+    end
   end
     print(dump(data))
   return msg
@@ -463,5 +501,31 @@ _norns.midi.event = function(id, data)
   end
 
 end
+
+_norns.midi.sysex_event = function(id, data)
+  print('sysexeventworkz')
+  local d = Midi.devices[id]
+
+  if d ~= nil then
+    if d.event ~= nil then
+      d.event(data)
+      
+    end
+    
+
+    if d.port then
+      if Midi.vports[d.port].event then
+        Midi.vports[d.port].event(data)
+      end
+      -- hack = send all midi to menu for param-cc-map
+      norns.menu_midi_event(data, d.port)
+    end
+  else
+    
+    error('no entry for midi '..id)
+  end
+
+end
+
 
 return Midi

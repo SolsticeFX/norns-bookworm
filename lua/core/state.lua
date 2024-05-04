@@ -13,12 +13,27 @@ state.name = ''
 state.shortname = ''
 state.clean_shutdown = false
 state.battery_warning = 1
+
 state.led_brightness = 255
 state.ui_colors = {}
 state.ui_colors[1]=0xFFFF00
 state.ui_colors[2]=0xFF0000
 state.ui_colors[3]=0x00FF00
 state.ui_colors[4]=0x0000FF
+
+state.pedalboard_led_brightness = 255
+state.pedalboard_colors = {}
+state.pedalboard_colors[1]=0xFFFF00
+state.pedalboard_colors[2]=0xFF0000
+state.pedalboard_colors[3]=0x00FF00
+state.pedalboard_colors[4]=0x0000FF
+state.pedalboard_colors[5]=0xFFFF00
+state.pedalboard_colors[6]=0xFF0000
+state.pedalboard_colors[7]=0x00FF00
+state.pedalboard_colors[8]=0x0000FF
+state.pedalboard_colors[9]=0xFFFF00
+state.pedalboard_colors[10]=0xFF0000
+
 
 state.mix = {}
 state.mix.output = 0

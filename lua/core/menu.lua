@@ -13,6 +13,7 @@ _menu = {}
 -- global functions for scripts
 key = norns.none
 enc = norns.none
+pedalenc = norns.none
 touch = norns.none
 press = norns.none
 release = norns.none
@@ -73,8 +74,9 @@ end
 norns.menu = {}
 norns.menu.init = function() _menu.set_mode(_menu.mode) end -- used by fileselect.lua
 norns.menu.status = function() return _menu.mode end
-norns.menu.set = function(new_enc, new_key, new_redraw, new_touch, new_press, new_release, new_tap, new_drag)
+norns.menu.set = function(new_enc, new_pedalenc, new_key, new_redraw, new_touch, new_press, new_release, new_tap, new_drag)
   _menu.penc = new_enc
+  _menu.pedalpenc = new_pedalenc
   _menu.key = new_key
   _menu.redraw = new_redraw
   _menu.ptouch = new_touch
@@ -84,6 +86,7 @@ norns.menu.set = function(new_enc, new_key, new_redraw, new_touch, new_press, ne
   _menu.pdrag = new_drag
 end
 norns.menu.get_enc = function() return _menu.penc end
+norns.menu.get_pedalenc = function() return _menu.pedalpenc end
 norns.menu.get_key = function() return _menu.key end
 norns.menu.get_touch = function() return _menu.ptouch end
 norns.menu.get_press = function() return _menu.ppress end
@@ -188,6 +191,20 @@ _menu.enc = function(n, delta)
   end
 end
 
+_menu.pedalenc = function(n, delta)
+  if n==1 and _menu.alt == false and (_menu.mode or _menu.paramMode) then
+    --mix:delta("output",delta)
+    local c = util.clamp(_menu.panel+delta,1,4)
+    if c ~= _menu.panel then
+      _menu.shownav = true
+      _menu.panel = c
+      _menu.set_page(_menu.panels[_menu.panel])
+      nav_vanish:start()
+    end
+  else _menu.pedalpenc(n, delta) 
+  end
+end
+
 
 _norns.key = function(n, z)
   -- key 1 detect for short press
@@ -246,11 +263,13 @@ _menu.set_mode = function(mode)
     redraw = norns.script.redraw
     _menu.key = key
     norns.encoders.callback = enc
+    norns.pedalencoders.callback = pedalenc
     norns.touchpress.callback = press
     norns.touchtap.callback = tap
     norns.touchdrag.callback = drag
     norns.touchrelease.callback = release
   
+    norns.pedalenc.resume()
     norns.enc.resume()
     redraw()
   elseif mode == true then -- ACTIVATE MENu MODE
@@ -263,11 +282,19 @@ _menu.set_mode = function(mode)
     screen.font_size(8)
     screen.line_width(1)
     norns.encoders.callback = _menu.enc
+    norns.pedalencoders.callback = _menu.pedalenc
     norns.touchtap.callback = _menu.tap
     norns.touchdrag.callback = _menu.drag
     norns.touchrelease.callback = _menu.release
     norns.touchpress.callback = _menu.press
 
+    norns.pedalencoders.set_accel(1,true)
+    norns.pedalencoders.set_sens(1,1)
+    norns.pedalencoders.set_accel(2,true)
+    norns.pedalencoders.set_sens(2,1)
+    norns.pedalencoders.set_accel(3,true)
+    norns.pedalencoders.set_sens(3,1)
+    
     norns.encoders.set_accel(1,false)
     norns.encoders.set_sens(1,2)
     norns.encoders.set_accel(2,false)
@@ -289,10 +316,12 @@ _menu.set_param_mode = function(mode)
     redraw = norns.script.redraw
     _menu.key = key
     norns.encoders.callback = enc
+    norns.pedalencoders.callback = pedalenc
     norns.touchpress.callback = press
     norns.touchtap.callback = tap
     norns.touchdrag.callback = drag
     norns.touchrelease.callback = release
+    norns.pedalenc.resume()
     norns.enc.resume()
     redraw()
   elseif mode == true then -- ACTIVATE PARAM MODE
@@ -305,10 +334,17 @@ _menu.set_param_mode = function(mode)
     screen.font_size(8)
     screen.line_width(1)
     norns.encoders.callback = _menu.enc
+    norns.pedalencoders.callback = _menu.pedalenc
     norns.touchtap.callback = _menu.tap
     norns.touchdrag.callback = _menu.drag
     norns.touchrelease.callback = _menu.release
-    norns.touchpress.callback = _menu.press    
+    norns.touchpress.callback = _menu.press 
+    norns.pedalencoders.set_accel(1,false)
+    norns.pedalencoders.set_sens(1,2)
+    norns.pedalencoders.set_accel(2,false)
+    norns.pedalencoders.set_sens(2,2)
+    norns.pedalencoders.set_accel(3,true)
+    norns.pedalencoders.set_sens(3,2)   
     norns.encoders.set_accel(1,false)
     norns.encoders.set_sens(1,2)
     norns.encoders.set_accel(2,false)
@@ -329,6 +365,7 @@ _menu.set_page = function(page)
   _menu.page = page
   _menu.key = m[page].key
   _menu.penc = m[page].enc
+  _menu.pedalpenc = m[page].pedalenc
   _menu.redraw = m[page].redraw
   _menu.ptouch = m[page].touch
   _menu.ppress = m[page].press

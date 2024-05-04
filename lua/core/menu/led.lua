@@ -7,7 +7,7 @@ m.key = function(n,z)
     _menu.set_page("SYSTEM")
   elseif n==3 and z==1 then
     --m.confirmed = true
-    os.execute("python3 /home/we/leds.py "..(2^(norns.state.led_brightness/13)))
+    os.execute("python3 /home/we/norns/scripts/leds.py "..(2^(norns.state.led_brightness/13)))
     _menu.redraw()
     --_norns.restart()
   end

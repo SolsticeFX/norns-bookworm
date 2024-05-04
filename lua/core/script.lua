@@ -68,7 +68,8 @@ Script.clear = function()
   -- clear, redirect, and reset devices
   grid.cleanup()
   arc.cleanup()
-  midi.cleanup()
+  --!!!!!!!!!!UNDO
+  --midi.cleanup()
   hid.cleanup()
   osc.cleanup()
 

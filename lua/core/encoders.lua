@@ -29,7 +29,7 @@ end
 
 encoders.set_rgb = function(n)
   if n == 0 then
-    os.execute("python3 /home/we/color1.py "..(string.format("%06X", encoders.colors[1])).. " "..(string.format("%06X", encoders.colors[2])).." "..(string.format("%06X", encoders.colors[3])).." "..(string.format("%06X", encoders.colors[4])))
+    os.execute("python3 /home/we/norns/scripts/color1.py "..(string.format("%06X", encoders.colors[1])).. " "..(string.format("%06X", encoders.colors[2])).." "..(string.format("%06X", encoders.colors[3])).." "..(string.format("%06X", encoders.colors[4])))
 
     print(string.format("%06X", encoders.colors[1]))
     print(string.format("%06X", encoders.colors[2]))
@@ -38,7 +38,7 @@ encoders.set_rgb = function(n)
 
 
   elseif n == 1 then
-    os.execute("python3 /home/we/color1.py "..(norns.state.ui_colors[1]).. " "..(norns.state.ui_colors[2]).." "..(norns.state.ui_colors[3]).." "..(norns.state.ui_colors[4]))
+    os.execute("python3 /home/we/norns/scripts/color1.py "..(norns.state.ui_colors[1]).. " "..(norns.state.ui_colors[2]).." "..(norns.state.ui_colors[3]).." "..(norns.state.ui_colors[4]))
   elseif n == 2 then
     screen.rgblevel(15,0,0)
   elseif n == 3 then

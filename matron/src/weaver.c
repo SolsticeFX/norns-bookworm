@@ -2198,6 +2198,21 @@ void w_handle_midi_event(int id, uint8_t *data, size_t nbytes) {
     l_report(lvm, l_docall(lvm, 2, 0));
 }
 
+void w_handle_midi_sysex_event(int id, uint8_t *data, size_t nbytes) {
+
+
+    lua_getglobal(lvm, "_norns");
+    lua_getfield(lvm, -1, "sysex");
+    lua_remove(lvm, -2);
+    lua_pushinteger(lvm, id + 1); // convert to 1-base
+    lua_createtable(lvm, nbytes, 0);
+    for (size_t i = 0; i < nbytes; i++) {
+        lua_pushinteger(lvm, data[i]);
+        lua_rawseti(lvm, -2, i + 1);
+    }
+    l_report(lvm, l_docall(lvm, 2, 0));
+}
+
 void w_handle_osc_event(char *from_host, char *from_port, char *path, lo_message msg) {
     const char *types = NULL;
     int argc;

@@ -11,6 +11,7 @@
 
 #define DEV_MIDI_INPUT_BUFFER_SIZE 128
 
+bool sysex_terminated = false;
 unsigned int dev_midi_port_count(const char *path) {
     int card;
     int alsa_dev;
@@ -162,7 +163,7 @@ static inline uint8_t midi_msg_len(uint8_t status) {
     // system exclusive messages (variable length)
     switch (status) {
     case 0xf0:  // sysex start
-        return 3; // special case, deliver sysex to lua in 3 byte chunks
+        return 6; // special case, deliver sysex to lua in 6 byte chunks
     case 0xf7:  // sysex stop
         return 1; // special case, allow single sysex stop as isolated event
     }
@@ -177,26 +178,44 @@ typedef struct {
     uint8_t prior_status;
     uint8_t prior_len;
 
-    uint8_t msg_buf[3];
+    uint8_t msg_buf[6];
     uint8_t msg_pos;
     uint8_t msg_len;
     bool    msg_started;
     bool    msg_sysex;
 } midi_input_state_t;
 
+
+
 static inline void midi_input_msg_post(midi_input_state_t *state, struct dev_midi *midi) {
+
+    if(state->msg_sysex){
+    union event_data *ev = event_data_new(EVENT_MIDI_SYSEX_EVENT);
+    ev->midi_sysex_event.id = midi->dev.id;
+    ev->midi_sysex_event.nbytes = state->msg_len;
+    for (uint8_t n = 0; n < state->msg_len; n++) {
+        ev->midi_sysex_event.data[n] = state->msg_buf[n];
+    }
+    event_post(ev);
+    }
+else{
     union event_data *ev = event_data_new(EVENT_MIDI_EVENT);
     ev->midi_event.id = midi->dev.id;
     ev->midi_event.nbytes = state->msg_len;
     for (uint8_t n = 0; n < state->msg_len; n++) {
         ev->midi_event.data[n] = state->msg_buf[n];
     }
-    fprintf(stderr, "posting midi event; byte count = %d\n", state->msg_len);
-    if(state->msg_sysex){
-    fprintf(stderr, "SYSEX");
-    }
     event_post(ev);
+
+
 }
+
+if(sysex_terminated){
+    state->msg_sysex = false;
+}
+    
+}
+
 
 static inline void midi_input_msg_start(midi_input_state_t *state, uint8_t status) {
     state->msg_pos = 0;
@@ -205,9 +224,6 @@ static inline void midi_input_msg_start(midi_input_state_t *state, uint8_t statu
     state->msg_buf[state->msg_pos++] = status;
     state->msg_sysex = status == 0xf0;
 
-    if(state->msg_sysex){
-    fprintf(stderr, "SYSEX");
-    }
     // save for running status
     if (!is_status_real_time(status)) {
         state->prior_status = status;
@@ -228,7 +244,7 @@ static inline void midi_input_msg_acc(midi_input_state_t *state, uint8_t byte) {
         
             state->msg_started = true;
             state->msg_pos = 0;
-            state->msg_len = 3;
+            state->msg_len = 6;
         } else {
             // running status, start a new message
             state->msg_started = true;
@@ -242,7 +258,8 @@ static inline void midi_input_msg_acc(midi_input_state_t *state, uint8_t byte) {
 
     // terminate sysex
     if (byte == 0xf7) {
-        state->msg_sysex = false;
+       //state->msg_sysex = false;
+        sysex_terminated = true; //changed so sysex is reset AFTER the message is sent
         state->msg_len = state->msg_pos;
     }
 }
