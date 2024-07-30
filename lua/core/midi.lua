@@ -359,7 +359,7 @@ function Midi.to_msg(data)
  
   -- system exclusive
   elseif data[1] == 0xf0 then
-    
+    print('SYSEX')
     sysexn = data[3]
     sysexdelta = data[5]
     msg = {
@@ -369,13 +369,19 @@ function Midi.to_msg(data)
 
 
     if data[2] == 0x0a then
+    --device intro handshake
+    print('New Peripheral Introduced!')
+      print('Device Type'..data[3])
+      print('Device ID'..data[4])
+      os.execute("python3 /home/we/norns/scripts/postboot.py")
+
     elseif data[2] == 0x0b then
 
 
       if data[4] == 0x2 then
-        print('anticlockwise')
-        print('n'..sysexn)
-        print('delta'..data[4])
+        --print('anticlockwise')
+        --print('n'..sysexn)
+        --print('delta'..data[4])
         if sysexn == 1 then
           _norns.pedalenc(sysexn, -1)
           else
@@ -384,9 +390,9 @@ function Midi.to_msg(data)
   
         --norns.enc(sysexn,sysexdelta)
       elseif data[4] == 0x1 then 
-        print('clockwise')
-        print('n'..sysexn)
-        print('delta'..sysexdelta)
+        --print('clockwise')
+        --print('n'..sysexn)
+        --print('delta'..sysexdelta)
         if sysexn == 1 then
         _norns.pedalenc(sysexn, 1)
         else

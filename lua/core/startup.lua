@@ -52,6 +52,7 @@ end
 -- monome device management
 _norns.monome = {}
 _norns.monome.add = function(id, serial, name, dev)
+print("### DEVICE DETECTED :o "..name)
   if util.string_starts(name, "monome arc") then
     _norns.arc.add(id, serial, name, dev)
   else _norns.grid.add(id, serial, name, dev) end
@@ -134,9 +135,11 @@ print("start_usb_audio(): ")
 --os.execute("jack_connect crone:output_2 alsa_out:playback_2")
 --os.execute("jack_connect system:capture_1 alsa_out:playback_1")
 --os.execute("jack_connect system:capture_2 alsa_out:playback_2")
-os.execute("/home/we/norns/scripts/usb_audio.sh")
-os.execute("aconnect solsticedev Client-131")
-os.execute("aconnect Client-131 solsticedev:1")
+
+
+--os.execute("/home/we/norns/scripts/usb_audio.sh")
+--os.execute("aconnect solsticedev Client-131")
+--os.execute("aconnect Client-131 solsticedev:1")
 
 --os.execute(jack_connect "solsticedev:MIDI_out" "a2j:Client-130 (capture): Virtual RawMIDI")
 --os.execute(jack_connect "solsticedev:MIDI_in" "a2j:Client-130 (playback): Virtual RawMIDI")

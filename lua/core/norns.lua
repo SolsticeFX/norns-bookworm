@@ -204,18 +204,6 @@ else
   norns.version.update = "000000"
 end
 
---- shutdown
-norns.shutdown = function()
-  hook.system_pre_shutdown()
-  print("SLEEP")
-  --TODO fade out screen then run the shutdown script
-  norns.state.clean_shutdown = true
-  norns.state.save()
-  pcall(cleanup)
-  audio.level_dac(0)
-  audio.headphone_gain(0)
-  os.execute("sleep 0.5; sudo shutdown now")
-end
 
 --- platform detection
 -- 0 = UNKNOWN
@@ -287,6 +275,20 @@ _norns.restart = function()
   audio.headphone_gain(0)
   _norns.reset()
 end
+
+--- shutdown
+_norns.shutdown = function()
+  hook.system_pre_shutdown()
+  print("SLEEP")
+  --TODO fade out screen then run the shutdown script
+  norns.state.clean_shutdown = true
+  norns.state.save()
+  pcall(cleanup)
+  audio.level_dac(0)
+  audio.headphone_gain(0)
+  os.execute("sleep 0.5; sudo shutdown now")
+end
+
 
 -- startup function will be run after I/O subsystems are initialized,
 -- but before I/O event loop starts ticking (see readme-script.md)

@@ -15,7 +15,9 @@ if True:
 #        string = string + "\n"
         string = string.encode('utf_8')
         ser.write(string)
+        ser.flush()
         ser2.write(string)
+        ser2.flush()
         # time.sleep(1) #delay of 1 second
 
 
