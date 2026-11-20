@@ -1,0 +1,246 @@
+#!/bin/bash
+# solstice-wifi: wifi control + hotspot fallback for Solstice (NetworkManager).
+#
+#   solstice-wifi daemon               watch wlan0; bring up hotspot when no wifi
+#   solstice-wifi hotspot [--fallback] start the hotspot
+#   solstice-wifi connect <name>       bring up a saved connection
+#   solstice-wifi add <ssid> [psk] [--hidden]
+#                                      create/replace a profile and connect
+#   solstice-wifi forget <name>        delete a saved connection
+#   solstice-wifi off                  turn the wifi radio off
+#   solstice-wifi on                   turn the radio on (autoconnect / fallback)
+#
+# State lives in /run/solstice-wifi:
+#   fallback  present while the hotspot was started automatically (the daemon
+#             may then switch back to a known network when one shows up)
+#   busy      present while a user-requested action is running (text = action)
+#   result    one line describing the outcome of the last user action
+
+IFACE=wlan0
+HOTSPOT=Hotspot
+HOTSPOT_ADDR=172.24.1.1/24
+PASSFILE=/home/we/norns/.system.hotspot_password
+STATE=/run/solstice-wifi
+LOCK=$STATE/lock
+
+GRACE=40          # seconds without wifi before the hotspot comes up
+TICK=5
+RETRY_EVERY=300   # while on fallback hotspot with no clients, look for known networks
+
+mkdir -p "$STATE" 2>/dev/null
+
+log() { echo "solstice-wifi: $*" >&2; }
+result() { echo "$*" > "$STATE/result"; log "$*"; }
+
+hotspot_password() {
+  local p=""
+  [ -r "$PASSFILE" ] && p=$(head -n1 "$PASSFILE")
+  if [ ${#p} -lt 8 ] || [ ${#p} -gt 63 ]; then p=nnnnnnnn; fi
+  printf '%s' "$p"
+}
+
+radio_on() {
+  if [ "$(nmcli -t radio wifi)" != "enabled" ]; then
+    nmcli radio wifi on
+    sleep 2   # scans/activations fail right after radio on
+  fi
+}
+
+# prints "<state-code>:<connection name>" for wlan0
+dev_state() {
+  nmcli -t -f GENERAL.STATE,GENERAL.CONNECTION dev show "$IFACE" 2>/dev/null |
+    awk -F: '/^GENERAL.STATE/{split($2,a," "); s=a[1]} /^GENERAL.CONNECTION/{sub(/^GENERAL.CONNECTION:/,""); c=$0} END{print s":"c}'
+}
+
+ensure_hotspot_profile() {
+  local ssid pass
+  ssid=$(hostname)
+  pass=$(hotspot_password)
+  if ! nmcli -t -f NAME con show | grep -qxF "$HOTSPOT"; then
+    nmcli con add type wifi ifname "$IFACE" con-name "$HOTSPOT" ssid "$ssid" >/dev/null || return 1
+  fi
+  nmcli con modify "$HOTSPOT" \
+    connection.interface-name "$IFACE" \
+    connection.autoconnect no \
+    802-11-wireless.ssid "$ssid" \
+    802-11-wireless.mode ap \
+    802-11-wireless.band bg \
+    802-11-wireless.mac-address "" \
+    ipv4.method shared \
+    ipv4.addresses "$HOTSPOT_ADDR" \
+    ipv6.method ignore \
+    wifi-sec.key-mgmt wpa-psk \
+    wifi-sec.proto rsn \
+    wifi-sec.pairwise ccmp \
+    wifi-sec.group ccmp \
+    wifi-sec.pmf disable \
+    wifi-sec.psk "$pass"
+}
+
+any_wifi_connected() {
+  local st=$(dev_state)
+  [ "${st%%:*}" = "100" ] && [ "${st#*:}" != "$HOTSPOT" ]
+}
+
+do_hotspot() {
+  local fallback=$1
+  radio_on
+  ensure_hotspot_profile || { result "hotspot: could not create profile"; return 1; }
+  if nmcli --wait 20 con up id "$HOTSPOT" >/dev/null 2>&1; then
+    if [ "$fallback" = 1 ]; then touch "$STATE/fallback"; else rm -f "$STATE/fallback"; fi
+    result "hotspot on: $(hostname)"
+  else
+    result "hotspot failed to start"
+    return 1
+  fi
+}
+
+# after a failed user action, don't leave the unit unreachable
+fallback_if_offline() {
+  sleep 3
+  any_wifi_connected || do_hotspot 1 >/dev/null
+}
+
+saved_wifi_names() {
+  nmcli -t -f NAME,TYPE con show | sed 's/\\:/\x01/g' |
+    awk -F: '$2=="802-11-wireless"{print $1}' | tr '\001' ':' | grep -vxF "$HOTSPOT"
+}
+
+with_lock() {
+  # user actions wait for the daemon's tick to finish, then hold the lock
+  exec 9>"$LOCK"
+  flock -w 30 9
+}
+
+busy() { echo "$*" > "$STATE/busy"; }
+done_busy() { rm -f "$STATE/busy"; }
+
+cmd=$1; shift
+case "$cmd" in
+  hotspot)
+    with_lock; busy "starting hotspot"
+    [ "$1" = "--fallback" ] && do_hotspot 1 || do_hotspot 0
+    done_busy
+    ;;
+
+  connect)
+    name=$1
+    [ -z "$name" ] && { echo "usage: $0 connect <name>" >&2; exit 2; }
+    with_lock; busy "connecting to $name"
+    rm -f "$STATE/fallback"
+    radio_on
+    if nmcli --wait 30 con up id "$name" >/dev/null 2>&1; then
+      result "connected: $name"
+    else
+      result "could not connect to $name"
+      fallback_if_offline
+    fi
+    done_busy
+    ;;
+
+  add)
+    ssid=$1; psk=$2; hidden=no
+    [ "$3" = "--hidden" ] || [ "$2" = "--hidden" ] && hidden=yes
+    [ "$psk" = "--hidden" ] && psk=""
+    [ -z "$ssid" ] && { echo "usage: $0 add <ssid> [psk] [--hidden]" >&2; exit 2; }
+    with_lock; busy "joining $ssid"
+    rm -f "$STATE/fallback"
+    radio_on
+    # replace any existing profile with this name (e.g. password changed)
+    while nmcli -t -f NAME con show | grep -qxF "$ssid"; do
+      nmcli con delete id "$ssid" >/dev/null 2>&1 || break
+    done
+    args=(con add type wifi ifname "$IFACE" con-name "$ssid" ssid "$ssid"
+          connection.autoconnect yes 802-11-wireless.hidden "$hidden")
+    [ -n "$psk" ] && args+=(wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$psk")
+    if ! nmcli "${args[@]}" >/dev/null 2>&1; then
+      result "could not save $ssid (bad password?)"
+      fallback_if_offline
+    elif nmcli --wait 30 con up id "$ssid" >/dev/null 2>&1; then
+      result "connected: $ssid"
+    else
+      nmcli con delete id "$ssid" >/dev/null 2>&1
+      result "could not join $ssid (wrong password?)"
+      fallback_if_offline
+    fi
+    done_busy
+    ;;
+
+  forget)
+    name=$1
+    with_lock
+    nmcli con delete id "$name" >/dev/null 2>&1 && result "forgot $name" || result "could not forget $name"
+    ;;
+
+  off)
+    with_lock
+    rm -f "$STATE/fallback"
+    nmcli radio wifi off
+    result "wifi off"
+    ;;
+
+  on)
+    with_lock; busy "turning wifi on"
+    radio_on
+    result "wifi on"
+    done_busy
+    ;;
+
+  daemon)
+    down=0
+    since_retry=0
+    exec 9>"$LOCK"
+    while true; do
+      sleep "$TICK"
+      flock -n 9 || { down=0; continue; }   # a user action is in progress
+
+      if [ "$(nmcli -t radio wifi 2>/dev/null)" != "enabled" ]; then
+        down=0; flock -u 9; continue          # user turned wifi off: respect it
+      fi
+
+      st=$(dev_state); code=${st%%:*}; con=${st#*:}
+
+      if [ "$code" = "100" ] && [ "$con" = "$HOTSPOT" ]; then
+        down=0
+        if [ -e "$STATE/fallback" ]; then
+          since_retry=$((since_retry + TICK))
+          if [ $since_retry -ge $RETRY_EVERY ]; then
+            since_retry=0
+            # only leave the hotspot if nobody is using it
+            if [ -z "$(iw dev "$IFACE" station dump 2>/dev/null)" ]; then
+              visible=$(nmcli -t -f SSID dev wifi list --rescan yes 2>/dev/null | sed 's/\\:/:/g' | sort -u)
+              while IFS= read -r name; do
+                ssid=$(nmcli -g 802-11-wireless.ssid con show id "$name" 2>/dev/null)
+                if [ -n "$ssid" ] && grep -qxF "$ssid" <<<"$visible"; then
+                  log "known network '$ssid' is back, leaving fallback hotspot"
+                  if nmcli --wait 30 con up id "$name" >/dev/null 2>&1; then
+                    rm -f "$STATE/fallback"
+                  else
+                    do_hotspot 1
+                  fi
+                  break
+                fi
+              done < <(saved_wifi_names)
+            fi
+          fi
+        fi
+      elif [ "$code" = "100" ]; then
+        down=0; since_retry=0
+      else
+        # disconnected / connecting / unavailable
+        down=$((down + TICK))
+        if [ $down -ge $GRACE ]; then
+          log "no wifi for ${down}s, starting fallback hotspot"
+          do_hotspot 1
+          down=0; since_retry=0
+        fi
+      fi
+      flock -u 9
+    done
+    ;;
+
+  *)
+    sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+    exit 2
+    ;;
+esac

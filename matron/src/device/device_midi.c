@@ -42,6 +42,7 @@ unsigned int dev_midi_port_count(const char *path) {
     snd_rawmidi_info_set_stream(info, SND_RAWMIDI_STREAM_INPUT);
     if (snd_ctl_rawmidi_info(ctl, info) >= 0) {
         subs_in = snd_rawmidi_info_get_subdevices_count(info);
+        
     }
 
     snd_rawmidi_info_set_stream(info, SND_RAWMIDI_STREAM_OUTPUT);

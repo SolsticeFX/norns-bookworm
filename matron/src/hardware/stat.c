@@ -21,15 +21,18 @@
 // static int fd[3];
 // static char buf[8];
 static pthread_t p;
-static bool have_vcgencmd;
+// SoC temperature in millidegrees C. Read from the kernel instead of
+// `vcgencmd measure_temp`: the firmware rejects gencmd on this Pi 5, and each
+// failed call logged a "Request 0x00030080" kernel message every 2s.
+#define TEMP_PATH "/sys/class/thermal/thermal_zone0/temp"
 
 void *stat_check(void *);
 
 // extern def
 
 void stat_init() {
-    if (!(have_vcgencmd = system("which vcgencmd > /dev/null 2>&1") == 0)) {
-        fprintf(stderr, "Unable to check temperature: vcgencmd not in path\n");
+    if (access(TEMP_PATH, R_OK) != 0) {
+        fprintf(stderr, "Unable to check temperature: %s not readable\n", TEMP_PATH);
     }
 
     if (pthread_create(&p, NULL, stat_check, 0)) {
@@ -50,7 +53,6 @@ void *stat_check(void *x) {
 
     FILE *fd;
     char buf[128];
-    char bufsub[8];
 
     uint32_t user, nice, system, idle, iowait, irq, softirq, steal;
     //uint32_t sumidle = 0, prevsumidle = 0, sumnonidle = 0, total = 0, prevtotal = 0;
@@ -78,18 +80,11 @@ void *stat_check(void *x) {
         }
 
         // check temp
-        if (have_vcgencmd) {
-            if ((fd = popen("vcgencmd measure_temp", "r")) == NULL) {
-                fprintf(stderr, "Error opening pipe: temp read\n");
-            } else {
-                while (fgets(buf, 16, fd) != NULL) {
-                    bufsub[0] = buf[5];
-                    bufsub[1] = buf[6];
-                    bufsub[2] = 0;
-                    temp = atoi(bufsub);
-                }
+        if ((fd = fopen(TEMP_PATH, "r")) != NULL) {
+            if (fgets(buf, sizeof(buf), fd) != NULL) {
+                temp = atoi(buf) / 1000;
             }
-            pclose(fd);
+            fclose(fd);
         }
 
         // check cpu

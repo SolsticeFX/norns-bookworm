@@ -34,6 +34,13 @@ state.pedalboard_colors[8]=0x0000FF
 state.pedalboard_colors[9]=0xFFFF00
 state.pedalboard_colors[10]=0xFF0000
 
+state.pedalboard_debug = 0
+state.pedalboard_uart = 1
+state.pedalboard_usb = 1
+state.pedalboard_bt = 1
+state.pedalboard_wifimidi = 0
+state.pedalboard_wifimonitor = 1
+state.pedalboard_ota = 1
 
 state.mix = {}
 state.mix.output = 0

@@ -55,10 +55,8 @@ te.enter = function(callback, default, heading, check)
     norns.menu.init()
     redraw = norns.none
   else
-    te.key_restore = norns.menu.get_key()
-    te.enc_restore = norns.menu.get_enc()
-    te.redraw_restore = norns.menu.get_redraw()
-    norns.menu.set(te.enc, te.key, te.redraw)
+    te.menu_restore = norns.menu.save()
+    norns.menu.set(te.enc, te.enc, te.key, te.redraw, nil, nil, nil, te.tap, te.drag)
   end
   te.redraw()
 end
@@ -73,7 +71,7 @@ te.exit = function()
     redraw = te.redraw_restore
     norns.menu.init()
   else
-    norns.menu.set(te.enc_restore, te.key_restore, te.redraw_restore)
+    norns.menu.restore(te.menu_restore)
   end
   if te.txt then te.callback(te.txt)
   else te.callback(nil) end

@@ -85,6 +85,18 @@ norns.menu.set = function(new_enc, new_pedalenc, new_key, new_redraw, new_touch,
   _menu.ptap = new_tap
   _menu.pdrag = new_drag
 end
+-- snapshot / restore every page input handler (used by listselect, textentry,
+-- fileselect overlays so they can't get norns.menu.set's argument order wrong)
+norns.menu.save = function()
+  return {
+    enc = _menu.penc, pedalenc = _menu.pedalpenc, key = _menu.key, redraw = _menu.redraw,
+    touch = _menu.ptouch, press = _menu.ppress, release = _menu.prelease,
+    tap = _menu.ptap, drag = _menu.pdrag,
+  }
+end
+norns.menu.restore = function(h)
+  norns.menu.set(h.enc, h.pedalenc, h.key, h.redraw, h.touch, h.press, h.release, h.tap, h.drag)
+end
 norns.menu.get_enc = function() return _menu.penc end
 norns.menu.get_pedalenc = function() return _menu.pedalpenc end
 norns.menu.get_key = function() return _menu.key end
@@ -131,9 +143,16 @@ end
 -- input redirection
 --TODO: redo with new UI widgets
 
+-- true when the current page is one of the top-level panels (MIX/TAPE/HOME/PARAMS).
+-- E1 and the top touch strip only switch panels there; sub-pages (SELECT, SYSTEM, ...)
+-- receive those inputs themselves.
+_menu.on_panel = function()
+  return (_menu.mode or _menu.paramMode) and tab.contains(_menu.panels, _menu.page)
+end
+
 _menu.drag = function(gx,gy,start_x,start_y,last_x,last_y)
 
-if(start_y<40) and (_menu.mode or _menu.paramMode) then
+if(start_y<40) and _menu.on_panel() then
 
   local c = util.clamp(math.floor(gx/200)+1,1,4)
   if c ~= _menu.panel then
@@ -141,13 +160,13 @@ if(start_y<40) and (_menu.mode or _menu.paramMode) then
     _menu.set_page(_menu.panels[_menu.panel])
   end
 
-else _menu.pdrag(gx,gy,start_x,start_y,last_x,last_y) end
+elseif _menu.pdrag then _menu.pdrag(gx,gy,start_x,start_y,last_x,last_y) end
 
 end
 
 _menu.press = function(gx,gy) 
 
-  _menu.ppress(gx,gy) 
+  if _menu.ppress then _menu.ppress(gx,gy) end
  
 end
 
@@ -156,13 +175,13 @@ end
 
 _menu.release = function(gx,gy) 
 
-   _menu.prelease(gx,gy) 
+   if _menu.prelease then _menu.prelease(gx,gy) end
   
 end
 
 _menu.tap = function( gx, gy)
 
-    if(gy<40) and (_menu.mode or _menu.paramMode) then
+    if(gy<40) and _menu.on_panel() then
       local c = util.clamp(math.floor(gx/200)+1,1,4)
       if c ~= _menu.panel then
         _menu.panel = c
@@ -170,7 +189,7 @@ _menu.tap = function( gx, gy)
       end
 
     else 
-     _menu.ptap(gx,gy) 
+     if _menu.ptap then _menu.ptap(gx,gy) end
      
 
      
@@ -178,7 +197,7 @@ _menu.tap = function( gx, gy)
   end
 
 _menu.enc = function(n, delta)
-  if n==1 and _menu.alt == false and (_menu.mode or _menu.paramMode) then
+  if n==1 and _menu.alt == false and _menu.on_panel() then
     --mix:delta("output",delta)
     local c = util.clamp(_menu.panel+delta,1,4)
     if c ~= _menu.panel then
@@ -192,7 +211,7 @@ _menu.enc = function(n, delta)
 end
 
 _menu.pedalenc = function(n, delta)
-  if n==1 and _menu.alt == false and (_menu.mode or _menu.paramMode) then
+  if n==1 and _menu.alt == false and _menu.on_panel() then
     --mix:delta("output",delta)
     local c = util.clamp(_menu.panel+delta,1,4)
     if c ~= _menu.panel then
@@ -201,7 +220,7 @@ _menu.pedalenc = function(n, delta)
       _menu.set_page(_menu.panels[_menu.panel])
       nav_vanish:start()
     end
-  else _menu.pedalpenc(n, delta) 
+  elseif _menu.pedalpenc then _menu.pedalpenc(n, delta)
   end
 end
 
@@ -519,6 +538,7 @@ m["LED"] = require 'core/menu/led'
 m["DEVICES"] = require 'core/menu/devices'
 m["WIFI"] = require 'core/menu/wifi'
 m["SETTINGS"] = require 'core/menu/settings'
+m["PEDALBOARD"] = require 'core/menu/pedalboard'
 m["RESTART"] = require 'core/menu/restart'
 m["RESET"] = require 'core/menu/reset'
 m["UPDATE"] = require 'core/menu/update'

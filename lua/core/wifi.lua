@@ -1,360 +1,240 @@
-local tabutil = require "tabutil"
+--- wifi
+-- thin wrapper around NetworkManager (nmcli) and the solstice-wifi helper
+-- (/usr/local/bin/solstice-wifi, source in norns/scripts/). anything that
+-- changes the connection runs in the background so the UI never blocks;
+-- the solstice-wifi service brings up the hotspot when there is no wifi.
+
 local util = require "util"
 
---
--- constants
---
-
 local HOTSPOT = "Hotspot"
+local IFACE = "wlan0"
+local HELPER = "/usr/local/bin/solstice-wifi"
+local STATE_DIR = "/run/solstice-wifi"
+local PASSFILE = "/home/we/norns/.system.hotspot_password"
 
---
--- common functions
---
-
-local function get_hotspot_password()
-  local hotspot_password;
-  local fd = io.open("home/we/norns/.system.hotspot_password", "r")
-  if fd then
-    io.input(fd)
-    hotspot_password = io.read()
-    io.close(fd)
-  else
-    hotspot_password = "nnnnnnnn"
-  end
-  return hotspot_password
+local function q(s)
+  return "'" .. tostring(s):gsub("'", "'\\''") .. "'"
 end
 
-local function collect_info(cmd)
-  local info = {}
-  local output = util.os_capture(cmd, true)
-  for line in output:gmatch('([^\n]*)\n?') do
-    for k, v in line:gmatch('([^:]*):(.+)') do
-      if k == "Error" then
-	return nil
-      end
-      info[k] = v
+local function capture(cmd)
+  return util.os_capture(cmd, true) or ""
+end
+
+local function lines(s)
+  local t = {}
+  for line in s:gmatch("([^\n]*)\n?") do
+    if line ~= "" then table.insert(t, line) end
+  end
+  return t
+end
+
+-- nmcli --terse escapes ':' and '\' inside values
+local function unescape(s)
+  return (s:gsub("\\(.)", "%1"))
+end
+
+-- split a terse nmcli line into fields, honouring escapes
+local function split_terse(line)
+  local fields, cur, i = {}, "", 1
+  while i <= #line do
+    local c = line:sub(i, i)
+    if c == "\\" and i < #line then
+      cur = cur .. line:sub(i + 1, i + 1); i = i + 2
+    elseif c == ":" then
+      table.insert(fields, cur); cur = ""; i = i + 1
+    else
+      cur = cur .. c; i = i + 1
     end
   end
-  return info
+  table.insert(fields, cur)
+  return fields
 end
 
-local function get_status(info)
-  local state = info["GENERAL.STATE"]
-  if state == nil then
-    return "unavailable"
-  end
-  for code, msg in state:gmatch('(%d+)%s+(.+)') do
-    code = tonumber(code)
-    if code == 20 then
-      return "off"
-    elseif code == 30 then
-      return "disconnected"
-    elseif code == 50 then
-      return "connecting..."
-    elseif code == 100 then
-      return "connected"
-    end
-  end
-  return "unknown"
+local function read_file(path)
+  local f = io.open(path, "r")
+  if not f then return nil end
+  local s = f:read("*l")
+  f:close()
+  return s
 end
 
-local function get_ip4(info)
-  local value = info["IP4.ADDRESS[1]"]
-  if value ~= nil then
-    local p = value:find("/")
-    if p ~= nil then p = p - 1 end
-    local ip = value:sub(1, p or -1)
-    return ip
-  end
-  return nil
+local function helper(args)
+  local cmd = HELPER .. " " .. args .. " >/dev/null 2>&1 &"
+  print("wifi: " .. args)
+  os.execute(cmd)
 end
-
---
--- device (class)
---
-
-local Device = {}
-Device.__index = Device
-
-function Device.new(name, device_type)
-  local o = setmetatable({}, Device)
-  o.name = name
-  o.type = device_type
-  o.info = {}
-  o.cache = {}
-  return o
-end
-
-function Device:refresh()
-  local cmd = "nmcli --terse device show " .. self.name
-  local info = collect_info(cmd)
-  if info ~= nil then
-    self.info = info
-    self.cache = {}
-  end
-  -- return self to allow for method chaining
-  return self
-end
-
-function Device:status()
-  return get_status(self.info)
-end
-
-function Device:ip4()
-  local value = self.cache["ip4"]
-  if value ~= nil then
-    return value
-  end
-
-  local ip = get_ip4(self.info)
-  if ip ~= nil then
-    self.cache["ip4"] = ip
-  end
-
-  return ip
-end
-
-function Device:connection_name()
-  return self.info["GENERAL.CONNECTION"]
-end
-
---
--- connection (class)
---
-
-local Connection = {}
-Connection.__index = Connection
-
-function Connection.new(name)
-  local o = setmetatable({}, Connection)
-  o.name = name
-  o.info = {}
-  return o
-end
-
-function Connection:refresh()
-  local cmd = "nmcli --terse --fields GENERAL,IP4,connection.type"
-  cmd = cmd .. " connection show id '" .. self.name .. "'"
-
-  local info = collect_info(cmd)
-  if info ~= nil then
-    self.info = info
-    self.cache = {}
-  end
-  -- return self to allow for method chaining
-  return self
-end
-
-function Connection:ip4()
-  return get_ip4(self.info)
-end
-
-function Connection:device_name()
-  return self.info["GENERAL.DEVICES"]
-end
-
-function Connection:is_wireless()
-  local value = self.info["connection.type"]
-  return value ~= nil and value == "802-11-wireless"
-end
-
-function Connection:status()
-  --return get_status(self.info)
-  return self.info["GENERAL.STATE"]
-end
-
---
--- wifi (module)
---
 
 local Wifi = {
-  -- variables used by menu
+  -- read by menus (home, looper, wifi)
   status = "unavailable",
-  state = 0, -- 0 = OFF, 1 = HOTSPOT, 2 = ROUTER
+  state = 0, -- 0 = OFF/disconnected, 1 = HOTSPOT, 2 = ROUTER (client)
+  radio = true,
   ip = "",
   signal = "",
   connection_name = "",
+  busy = nil,       -- text while a background action is running
+  result = nil,     -- outcome of the last action
+  fallback = false, -- hotspot was started automatically
 
   conn_list = {},
   conn_count = 0,
   conn_active = -1,
 
-  -- the hardware interface being manipulated by add, off
-  device = Device.new("wlan0"),
-
-  -- active connection object
-  connection = nil
+  HOTSPOT = HOTSPOT,
 }
 
+function Wifi.hotspot_ssid()
+  return util.os_capture("hostname") or "norns"
+end
+
+function Wifi.hotspot_password()
+  local p = read_file(PASSFILE)
+  if p == nil or #p < 8 or #p > 63 then p = "nnnnnnnn" end
+  return p
+end
+
 function Wifi.init()
-  -- intended to be called in matron startup code.
-  local conns = Wifi.connections(true) -- all connections
-  print("network connections:")
-  print("--------------------")
-  tabutil.print(conns)
   Wifi.update()
+  print("wifi: " .. Wifi.status .. " " .. Wifi.connection_name .. " " .. Wifi.ip)
 end
 
-function Wifi.off()
-  print("do wifi off")
-  os.execute("nmcli radio wifi off")
+function Wifi.off() helper("off") end
+function Wifi.radio_on() helper("on") end
+function Wifi.hotspot() helper("hotspot") end
+function Wifi.on(name) helper("connect " .. q(name)) end
+Wifi.connect = Wifi.on
+
+function Wifi.add(ssid, psk, hidden)
+  local args = "add " .. q(ssid)
+  if psk and psk ~= "" then args = args .. " " .. q(psk) end
+  if hidden then args = args .. " --hidden" end
+  helper(args)
 end
 
-function Wifi.hotspot()
-  print("activating hotspot")
-  Wifi.ensure_radio_is_on()
-  os.execute("nmcli c delete Hotspot")
-  os.execute("nmcli dev wifi hotspot ifname wlan0 ssid $(hostname) password " .. get_hotspot_password())
-end
-
-function Wifi.on(connection)
-  local active = Wifi.active_connection()
-  if connection == active then
-    print("connection '" .. connection .. "' already enabled.")
-  else
-    -- clear out variables displayed by menu
-    Wifi.connection_name = ""
-    Wifi.ip = ""
-
-    print("enabling connection: '" .. connection .. "'")
-    Wifi.ensure_radio_is_on()
-    -- change connection in bg to allow ui to update
-    os.execute("nmcli --wait 2 connection up id '" .. connection .. "' &")
+function Wifi.delete(name)
+  helper("forget " .. q(name))
+  for i, n in ipairs(Wifi.conn_list) do
+    if n == name then table.remove(Wifi.conn_list, i) break end
   end
+  Wifi.conn_count = #Wifi.conn_list
 end
 
-function Wifi.connections(all)
-  local output = util.os_capture("nmcli --terse --fields name connection show", true)
-  local conns = {}
-  local i = 1
-  for line in output:gmatch('([^\n]*)\n?') do
-    if line ~= "" and (line ~= HOTSPOT or all) then
-      conns[i] = line
-      i = i + 1
-    end
-  end
-  return conns
-end
-
-function Wifi.active_connection()
-  -- returns the name of the first listed active connection (of potentially multiple)
-  local output = util.os_capture("nmcli --terse --fields name conn show --active", true)
-  for line in output:gmatch('([^\n]*)\n?') do
-    if line ~= "" then
-      return line
-    end
-  end
-  return nil
-end
-
-function Wifi.ssids()
-  local output = util.os_capture("nmcli --terse --fields ssid device wifi list", true)
-  local ssids = {}
-  local i = 1
-  for line in output:gmatch('([^\n]*)\n?') do
-    if line ~= "" then
-      ssids[i] = line
-      i = i + 1
-    end
-  end
-  return ssids
+function Wifi.ensure_radio_is_on()
+  if Wifi.radio_state() ~= "enabled" then Wifi.radio_on() end
 end
 
 function Wifi.radio_state()
   return util.os_capture("nmcli --terse radio wifi")
 end
 
-function Wifi.ensure_radio_is_on()
-  if Wifi.radio_state() ~= "enabled" then
-    os.execute("nmcli radio wifi on")
-    os.execute("sleep 1.5")  -- various operations fail if called right after radio on
-  end
-end
-
-function Wifi.add(ssid, psk)
-  Wifi.ensure_radio_is_on()
-  print("adding wifi network: " .. ssid)
-  local cmd = "nmcli --wait 10 device wifi connect"
-  cmd = cmd .. " '" .. ssid .. "' password '" .. psk .. "'"
-  cmd = cmd .. " ifname " .. Wifi.device.name
-  os.execute(cmd)
-  -- dis-associate connection profile from hardware MAC address
-  cmd = "nmcli con mod '" .. ssid .. "' -802-11-wireless.mac-address ''"
-  os.execute(cmd)
-  -- ensure connection list is up to date
-  Wifi.conn_list = Wifi.connections()
-end
-
-function Wifi.delete(name)
-  -- FIXME: do we need to turn off radio if name == active_connection?
-  print("deleting wifi network: " .. name)
-  os.execute("nmcli connection delete id '" .. name .. "'")
-  -- ensure connection list is up to date
-  Wifi.conn_list = Wifi.connections()
-end
-
-function Wifi.devices(types)
-  local devices = {}
-  local i = 1
-  local output = util.os_capture("nmcli --terse --fields device,type device", true)
-  for line in output:gmatch('([^\n]*)\n?') do
-    for device_name, device_type in line:gmatch('([^:]*):(.+)') do
-      if k == "Error" then
-	return nil
-      end
-      devices[i] = Device.new(device_name, device_type)
-      i = i + 1
+--- saved wifi networks (hotspot excluded unless all == true)
+function Wifi.connections(all)
+  local conns = {}
+  for _, line in ipairs(lines(capture("nmcli --terse --fields NAME,TYPE connection show"))) do
+    local f = split_terse(line)
+    if f[2] == "802-11-wireless" and (all or f[1] ~= HOTSPOT) then
+      table.insert(conns, f[1])
     end
   end
-  return devices
+  table.sort(conns, function(a, b) return a:lower() < b:lower() end)
+  return conns
+end
+
+function Wifi.active_connection()
+  return Wifi.connection_name ~= "" and Wifi.connection_name or nil
+end
+
+--- scan for networks. blocks for a few seconds when rescan is true.
+-- returns a list of {ssid=, signal=, secure=, active=}, strongest first,
+-- one entry per ssid, hidden networks skipped.
+function Wifi.scan(rescan)
+  local cmd = "nmcli --terse --fields IN-USE,SIGNAL,SECURITY,SSID device wifi list ifname " .. IFACE
+  if rescan then cmd = cmd .. " --rescan yes" end
+  local seen, out = {}, {}
+  for _, line in ipairs(lines(capture(cmd .. " 2>/dev/null"))) do
+    local f = split_terse(line)
+    local ssid = f[4]
+    if ssid and ssid ~= "" and ssid ~= "--" then
+      local sig = tonumber(f[2]) or 0
+      local e = seen[ssid]
+      if e == nil then
+        e = {ssid = ssid, signal = sig, secure = (f[3] ~= "" and f[3] ~= "--"), active = (f[1] == "*")}
+        seen[ssid] = e
+        table.insert(out, e)
+      else
+        e.signal = math.max(e.signal, sig)
+        e.active = e.active or f[1] == "*"
+      end
+    end
+  end
+  table.sort(out, function(a, b) return a.signal > b.signal end)
+  return out
+end
+
+-- legacy: list of ssid names
+function Wifi.ssids()
+  local t = {}
+  for _, e in ipairs(Wifi.scan(false)) do table.insert(t, e.ssid) end
+  return t
 end
 
 function Wifi.update()
-  local active = Wifi.active_connection()
+  Wifi.radio = (Wifi.radio_state() == "enabled")
+  Wifi.busy = read_file(STATE_DIR .. "/busy")
+  Wifi.result = read_file(STATE_DIR .. "/result")
+  Wifi.fallback = util.file_exists(STATE_DIR .. "/fallback")
 
-  if active == nil then
-    Wifi.connection_name = ""
-    Wifi.ip = ""
-    Wifi.signal = ""
-    Wifi.state = 0
-    if Wifi.connection ~= nil then
-      -- let status reflect the state of the last active connection
-      Wifi.status = Wifi.connection:status() or ""
-    end
-    return
+  local info = {}
+  local out = capture("nmcli --terse --fields GENERAL.STATE,GENERAL.CONNECTION,IP4.ADDRESS device show " .. IFACE)
+  for _, line in ipairs(lines(out)) do
+    local k, v = line:match("^([^:]+):(.*)$")
+    if k then info[k] = unescape(v) end
   end
 
-  if Wifi.connection == nil or Wifi.connection.name ~= active then
-    -- connection changed; update device
-    Wifi.connection = Connection.new(active)
-  end
+  local code = tonumber((info["GENERAL.STATE"] or ""):match("^(%d+)")) or 0
+  local con = info["GENERAL.CONNECTION"] or ""
+  local ip = (info["IP4.ADDRESS[1]"] or ""):match("^([^/]+)") or ""
 
-  Wifi.connection_name = active
-  Wifi.connection:refresh()
-  Wifi.status = Wifi.connection:status() or ""
-
+  Wifi.connection_name = con
+  Wifi.ip = ""
+  Wifi.signal = ""
   Wifi.state = 0
-  if active ~= nil then
-    if active == HOTSPOT then Wifi.state = 1 else Wifi.state = 2 end
-  end
 
-  Wifi.conn_list = Wifi.connections()
-  wifi.conn_count = #Wifi.conn_list
-  Wifi.conn_active = tabutil.key(Wifi.conn_list, active)
-
-  if wifi.state > 0 then
-    local ip = Wifi.connection:ip4()
-    if ip ~= nil then wifi.ip = ip else wifi.ip = "" end
-
-    if Wifi.connection:is_wireless() then
-      local name = Wifi.connection:device_name()
-      if name then
-	wifi.signal = util.os_capture("iw dev " .. name .. " link | grep 'signal' | awk '{print $2}'")
-      end
+  if not Wifi.radio then
+    Wifi.status = "off"
+    Wifi.connection_name = ""
+  elseif code == 100 then
+    Wifi.ip = ip
+    if con == HOTSPOT then
+      Wifi.state = 1
+      Wifi.status = "hotspot"
     else
-      wifi.signal = ""
+      Wifi.state = 2
+      Wifi.status = "connected"
+      local sig = util.os_capture("iw dev " .. IFACE .. " link | awk '/signal/{print $2}'")
+      Wifi.signal = sig or ""
     end
+  elseif code >= 40 and code < 100 then
+    Wifi.status = "connecting"
+  elseif code == 30 then
+    Wifi.status = "disconnected"
+    Wifi.connection_name = ""
+  else
+    Wifi.status = "unavailable"
+    Wifi.connection_name = ""
   end
+
+end
+
+--- refresh the saved-network list (separate from update() to keep polling cheap)
+function Wifi.refresh_connections()
+  Wifi.conn_list = Wifi.connections()
+  Wifi.conn_count = #Wifi.conn_list
+  Wifi.conn_active = -1
+  for i, n in ipairs(Wifi.conn_list) do
+    if n == Wifi.connection_name then Wifi.conn_active = i end
+  end
+  return Wifi.conn_list
 end
 
 return Wifi

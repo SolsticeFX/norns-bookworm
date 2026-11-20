@@ -5,8 +5,8 @@ if __name__ == '__main__':
     # if connected via USB cable
     #ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1) #9600 is baud rate(must be same with that of NodeMCU)
     # if connected via serial Pin(RX, TX)
-    ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=1) #9600 is baud rate(must be same with that of NodeMCU)
-    ser2 = serial.Serial('/dev/ttyAMA2', 38400, timeout=1) #9600 is baud rate(must>
+    ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=1)
+    ser2 = serial.Serial('/dev/ttyAMA2', 38400, timeout=1) 
     ser.flush()
     ser2.flush()
 if True:

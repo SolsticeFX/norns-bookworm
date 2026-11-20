@@ -31,9 +31,9 @@ tttap=function(x,y)
   x=x/800*128
   y=y/480*64
    --   if ((x>button.x-button.width/2) and (y>button.y-button.height/2) and (x<(button.x+button.width/2)) and (y<(button.y+button.height/2))) then
-      print("TAPpy")
-      print(getmetatable(button))
-      print(x,y)
+     -- print("TAPpy")
+     -- print(getmetatable(button))
+     -- print(x,y)
 --end 
 end
 
@@ -80,7 +80,7 @@ Button.press=function(x,y)
    for i=1,#ButtonList do
       if ((x>ButtonList[i].x-ButtonList[i].width/2) and (y>ButtonList[i].y-ButtonList[i].height/2) and (x<(ButtonList[i].x+ButtonList[i].width/2)) and (y<(ButtonList[i].y+ButtonList[i].height/2))) then
         ButtonList[i].pressed = true
-        print("Button Pressed: ".. i)
+        --print("Button Pressed: ".. i)
         ButtonList[i].callback()
         ButtonList[i]:redraw()
       end
@@ -127,7 +127,7 @@ function Button:key(n,z)
 
     if self.pressed then
 
-      screen.hexrgblevel(norns.encoders.get_active_color(self.btkey))
+    screen.hexrgblevel(norns.encoders.get_active_color(self.btkey))
     else
     screen.hexrgblevel(norns.encoders.get_inactive_color(self.btkey))
 

@@ -468,14 +468,30 @@ m.redraw = function()
     screen.text("PARAMETERS")
     for i=1,3 do
       if i==m.mode_pos then 
+
         screen.rgblevel(15,2,2) 
-      else screen.level(4) 
-      end
-      screen.move(0,10*i+25)
-      screen.text(mode_item[i])
-      if i==m.mode_pos then 
+        screen.move(0,10*i+25)
+        screen.text(mode_item[i])
+
         screen.rgblevel(0,15,9)  
         screen.text(" >")
+        
+        screen.hexrgblevel(screen.fadedColor(0x33FF99, 0xA0))
+      
+        screen.move(0,22.5+10*i)
+        screen.blend_mode(13)
+       --screen.move(0,22.5+10*i)
+        screen.rounded_rect_center(0,22.5+10*i,(screen.text_extents(mode_item[i].." >")+2)*2,10,2)
+        screen.fill()
+        screen.blend_mode(0)
+
+        
+
+
+      else 
+        screen.rgblevel(15,4,4) 
+        screen.move(0,10*i+25)
+        screen.text(mode_item[i])
       end
     end
   -- EDIT

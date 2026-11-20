@@ -30,6 +30,12 @@ static void* enc_gpio_poll(void* data);
 static void* key_gpio_poll(void* data);
 static int open_and_grab(const char *pathname, int flags);
 
+static long long mono_us(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (long long)ts.tv_sec * 1000000LL + ts.tv_nsec / 1000;
+}
+
 input_ops_t key_gpio_ops = {
     .io_ops.name      = "keys:gpio",
     .io_ops.type      = IO_INPUT,
@@ -121,11 +127,13 @@ void* enc_gpio_poll(void* data) {
     int rd;
     unsigned int i;
     struct input_event event[64];
-    int dir[3] = {1, 1, 1};
-    clock_t now[3];
-    clock_t prev[3];
-    clock_t diff;
-    prev[0] = prev[1] = prev[2] = clock();
+    // one thread per encoder, so a single timestamp is enough. (These used to be
+    // 3-element arrays indexed by the event number i, which goes up to 63 and
+    // overflowed the stack on fast turns.) Wall-clock microseconds; clock()
+    // measured process CPU time.
+    int dir = 1;
+    long long now, prev, diff;
+    prev = mono_us();
 
     while (1) {
         rd = read(priv->base.fd, event, sizeof(struct input_event) * 64);
@@ -135,14 +143,13 @@ void* enc_gpio_poll(void* data) {
 
         for (i = 0; i < rd / sizeof(struct input_event); i++) {
             if (event[i].type) { // make sure it's not EV_SYN == 0
-                now[i] = clock();
-                diff = now[i] - prev[i];
-                // fprintf(stderr, "%d\t%d\t%lu\n", n, event[i].value, diff);
-                prev[i] = now[i];
+                now = mono_us();
+                diff = now - prev;
+                prev = now;
                 if (diff > 100) { // filter out glitches
-                    if (dir[i] != event[i].value &&
+                    if (dir != event[i].value &&
                         diff > 500) { // only reverse direction if there is reasonable settling time
-                        dir[i] = event[i].value;
+                        dir = event[i].value;
                     }
                     union event_data *ev = event_data_new(EVENT_ENC);
                     ev->enc.n = priv->index;
@@ -190,7 +197,10 @@ int open_and_grab(const char *pathname, int flags) {
         fd = open(pathname, flags);
         if (fd > 0) {
             if (ioctl(fd, EVIOCGRAB, 1) == 0) {
-                ioctl(fd, EVIOCGRAB, (void *)0);
+                // keep the exclusive grab: the keys are gpio-keys with codes
+                // ESC/1/2/3, and without it the kernel keyboard handler also
+                // types them into the tty1 console (digits showing behind the
+                // UI). The grab is released when matron closes the fd/exits.
                 goto done;
             }
             ioctl_attempts++;

@@ -22,10 +22,8 @@ function ls.enter(list, callback)
     redraw = norns.none
     norns.menu.init()
   else
-    ls.key_restore = norns.menu.get_key()
-    ls.enc_restore = norns.menu.get_enc()
-    ls.redraw_restore = norns.menu.get_redraw()
-    norns.menu.set(ls.enc, ls.key, ls.redraw)
+    ls.menu_restore = norns.menu.save()
+    norns.menu.set(ls.enc, ls.enc, ls.key, ls.redraw, nil, nil, nil, ls.tap, ls.drag)
   end
   ls.redraw()
 end
@@ -37,7 +35,7 @@ function ls.exit()
     redraw = ls.redraw_restore
     norns.menu.init()
   else
-    norns.menu.set(ls.enc_restore, ls.key_restore, ls.redraw_restore)
+    norns.menu.restore(ls.menu_restore)
   end
   if ls.selection then ls.callback(ls.selection)
   else ls.callback("cancel") end
@@ -65,6 +63,30 @@ ls.enc = function(n,d)
 end
 
 
+-- touch (800x480 panel over the 128x64 screen): tap a row to pick it,
+-- drag vertically to scroll
+ls.tap = function(x, y)
+  if ls.len == 0 then return end
+  local sy = y * 80 / (_G.touch_resolution_y or 480) -- panel shows 128x80
+  local row = math.floor((sy + 7) / 10)          -- rows have baselines at 10*i
+  local idx = ls.pos + (row - 3)                 -- row 3 is the highlighted one
+  if row < 1 or row > 6 or idx < 0 or idx > ls.len - 1 then return end
+  ls.pos = idx
+  ls.selection = ls.list[ls.pos + 1]
+  ls.exit()
+end
+
+ls.drag = function(x, y, sx, sy, lx, ly)
+  ls.drag_acc = (ls.drag_acc or 0) + (ly - y)
+  local step = (_G.touch_resolution_y or 480) / 8
+  while math.abs(ls.drag_acc) >= step do
+    local d = ls.drag_acc > 0 and 1 or -1
+    ls.drag_acc = ls.drag_acc - d * step
+    ls.pos = util.clamp(ls.pos + d, 0, ls.len - 1)
+  end
+  ls.redraw()
+end
+
 ls.redraw = function()
   local i
   screen.clear()
@@ -77,10 +99,11 @@ ls.redraw = function()
       if (i > 2 - ls.pos) and (i < ls.len - ls.pos + 3) then
         screen.move(0,10*i)
         local line = ls.list[i+ls.pos-2]
-        if(i==3) then
-          screen.level(15)
+        -- rows are scrolled by E2: draw them in E2's colour
+        if norns.encoders and norns.encoders.screen_color then
+          norns.encoders.screen_color(2, i==3)
         else
-          screen.level(4)
+          screen.level(i==3 and 15 or 4)
         end
         --screen.text(string.upper(line))
         screen.text(line)

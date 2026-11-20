@@ -72,6 +72,7 @@ function Midi.new(id, name, dev)
       -- assign device unless device is specialized virtual interface
       if Midi.vports[i].name == "none" and d.name ~= "virtual" then
         Midi.vports[i].name = d.name
+        
         break
       end
     end
@@ -97,6 +98,7 @@ function Midi.remove(dev) end
 function Midi:send(data)
   if data.type then
     local d = Midi.to_data(data)
+    if d then _norns.midi_send(self.dev, d) end
   else
     _norns.midi_send(self.dev, data)
   end
@@ -260,7 +262,6 @@ local to_data = {
 -- @treturn table data : table of midi status and data bytes
 function Midi.to_data(msg)
   if msg.type then
-    print("hey")
     return to_data[msg.type](msg)
   else
     error('failed to serialize midi message')
@@ -403,8 +404,40 @@ function Midi.to_msg(data)
 
     elseif data[2] == 0x0c then
         _norns.key(sysexn, sysexdelta)
-    else
-      print('huh')
+    elseif data[2] == 0x0d then
+      
+      msg = {
+        type = "cc",
+        cc = data[3],
+        val = data[4],
+        ch = 1 
+      }
+      --print('Mag')
+    
+      local data = midi.to_data(msg)
+        local d = Midi.devices[1]
+
+        if d ~= nil then
+          if d.event ~= nil then
+            d.event(data)
+            
+          end
+      
+          if d.port then
+            if Midi.vports[d.port].event then
+              Midi.vports[d.port].event(data)
+            end
+            -- hack = send all midi to menu for param-cc-map
+            norns.menu_midi_event(data, Midi.devices[1].port)
+          end
+        else
+          error('no entry for midi '..i)
+        end
+      
+      
+      
+      
+    else print ('huh')
     end
 
   -- everything else
@@ -416,7 +449,7 @@ function Midi.to_msg(data)
     }
     end
   end
-    print(dump(data))
+    --print(dump(data))
   return msg
 end
 
@@ -467,6 +500,7 @@ _norns.midi.add = function(id, name, dev)
    print(string.format("_norns.midi.add: %d, %s, %s",id,name,dev))
   local d = Midi.new(id, name, dev)
   Midi.devices[id] = d
+
   Midi.update_devices()
   if Midi.add ~= nil then Midi.add(d) end
 end

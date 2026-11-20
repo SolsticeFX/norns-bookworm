@@ -23,7 +23,7 @@ end
 
 pedalencoders.update_color = function(n, col)
   pedalencoders.colors[n] = col
-  pedalencoders.set_rgb(0)
+  pedalencoders.set_pedalboard_rgb(0)
 end
 
 
@@ -35,11 +35,11 @@ pedalencoders.set_rgb = function(n)
   elseif n == 1 then
     _norns.midi_send(midi.devices[1].dev, {0xf0,0x01,0xff,0xff,0x01,0xf7}) --sending any sysex message currently sends "boot" to esp UART
   elseif n == 2 then
-    _norns.midi_send(midi.devices[1].dev, {0xf0,0x02,0xff,0x01,0x01,0xf7}) --sending any sysex message currently sends "boot" to esp UART
+    _norns.midi_send(midi.devices[1].dev, {0xf0,0x02,0xff,0x01,0x01,0xf7})
   elseif n == 3 then
-    _norns.midi_send(midi.devices[1].dev, {0xf0,0x03,0xff,0x01,0x01,0xf7}) --sending any sysex message currently sends "boot" to esp UART
+    _norns.midi_send(midi.devices[1].dev, {0xf0,0x03,0xff,0x01,0x01,0xf7}) 
   elseif n == 4 then
-    _norns.midi_send(midi.devices[1].dev, {0xf0,0x04,0xff,0x01,0x01,0xf7}) --sending any sysex message currently sends "boot" to esp UART
+    _norns.midi_send(midi.devices[1].dev, {0xf0,0x04,0xff,0x01,0x01,0xf7}) 
 end
 end
 
@@ -49,7 +49,7 @@ pedalencoders.set_pedalboard_rgb = function(n)
 
     _norns.midi_send(midi.devices[1].dev, {0xf0,0x69,0xf7}) --sending any sysex message currently sends "boot" to esp UART
     
-    os.execute("python3 /home/we/color1.py "..(string.format("%06X", pedalencoders.colors[1])).. " "..(string.format("%06X", pedalencoders.colors[2])).." "..(string.format("%06X", pedalencoders.colors[3])).." "..(string.format("%06X", pedalencoders.colors[4])))
+    os.execute("python3 /home/we/norns/scripts/pedalboardcolors.py "..(string.format("%06X", pedalencoders.colors[1])).. " "..(string.format("%06X", pedalencoders.colors[2])).." "..(string.format("%06X", pedalencoders.colors[3])).." "..(string.format("%06X", pedalencoders.colors[4])).." "..(string.format("%06X", pedalencoders.colors[5])).." "..(string.format("%06X", pedalencoders.colors[6])).." "..(string.format("%06X", pedalencoders.colors[7])).." "..(string.format("%06X", pedalencoders.colors[8])).." "..(string.format("%06X", pedalencoders.colors[9])).." "..(string.format("%06X", pedalencoders.colors[10])))
 
     print(string.format("%06X", pedalencoders.colors[1]))
     print(string.format("%06X", pedalencoders.colors[2]))
@@ -64,7 +64,7 @@ pedalencoders.set_pedalboard_rgb = function(n)
 
 
   elseif n == 1 then
-    os.execute("python3 /home/we/color1.py "..(norns.state.ui_colors[1]).. " "..(norns.state.ui_colors[2]).." "..(norns.state.ui_colors[3]).." "..(norns.state.ui_colors[4]))
+    os.execute("python3 /home/we/norns/scripts/pedalboardcolors.py "..(norns.state.ui_colors[1]).. " "..(norns.state.ui_colors[2]).." "..(norns.state.ui_colors[3]).." "..(norns.state.ui_colors[4]))
   elseif n == 2 then
     screen.rgblevel(15,0,0)
   elseif n == 3 then
@@ -99,20 +99,13 @@ pedalencoders.get_active_color = function(n)
 end
 
 
-fadedColor = function(activeHex)
-  fade = 0xAA --vs 0xFF             
-  r = activeHex >> 16                    
-  g = (activeHex & 0xFF00) >> 8         
-  b = (activeHex & 0xFF)     
-  return ((r-r*fade//0x100) << 16) + ((g-g*fade//0x100) << 8) + (b-b*fade//0x100)
-end
 
 
 
 pedalencoders.get_inactive_color = function(n)
   activeHex = pedalencoders.colors[n]
   if n > 0 then
-    return fadedColor(activeHex)
+    return screen.fadedColor(activeHex, 0xAA)
   else
     return 0x666666
   end
@@ -146,6 +139,12 @@ pedalencoders.set_sens = function(n,s)
 end
 
 --- process delta
+-- TODO: port the encoders.lua fix (2026-11-20) here if the pedal encoders
+-- also skip items. That fix builds a whole detent before emitting a step,
+-- times accel between steps rather than raw events (the raw-event timing gave
+-- x3-x4 on single clicks with half-period encoders), and drops leftover
+-- half-steps after 150 ms idle or a direction change. First check whether the
+-- pedal encoders send 2 raw events per detent too.
 pedalencoders.process = function(n,d)
   now = util.time()
   local diff = now - pedalencoders.time[n]

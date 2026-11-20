@@ -210,14 +210,30 @@ m.redraw = function()
         screen.move(0,10*(i+1))
         local line = m.list[home_tabs.index][i+m.pos[home_tabs.index]-2].name
         if(i==3) then
+          local is_fave = "  "
+          if contains(m.favorites[home_tabs.index], m.list[home_tabs.index][i+m.pos[home_tabs.index]-2]) then is_fave = " * " else is_fave = "   " end
+          screen.rgblevel(0,15,9)
+          screen.text(is_fave)
           screen.rgblevel(15,0,0)
-        else
-          screen.level(4)
-        end
-        local is_fave = "  "
-        if contains(m.favorites[home_tabs.index], m.list[home_tabs.index][i+m.pos[home_tabs.index]-2]) then is_fave = " * " else is_fave = "   " end
+          screen.text(string.upper(line))
+          screen.rgblevel(0,15,9)
+          screen.text(" >")
 
-        screen.text(is_fave .. string.upper(line))
+          screen.hexrgblevel(screen.fadedColor(0x33FF99, 0xA0))
+          screen.blend_mode(13)
+          screen.move(10, 32.5)
+          screen.rounded_rect(10, 32.5, ((screen.text_extents(string.upper(line).." >"))+4), 10, 2)
+          screen.fill()
+          screen.move(0,10*(i+1))
+        else
+          local is_fave = "  "
+          if contains(m.favorites[home_tabs.index], m.list[home_tabs.index][i+m.pos[home_tabs.index]-2]) then is_fave = " * " else is_fave = "   " end
+          screen.level(5)
+          screen.text(is_fave)
+          screen.rgblevel(15,3,3)
+          screen.text(string.upper(line))
+          
+        end
       end
     end
   end

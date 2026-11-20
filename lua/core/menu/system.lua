@@ -1,7 +1,7 @@
 local m = {
   pos = 1,
-  list = {"SHUTDOWN", "RESTART", "ABOUT", "SETTINGS", "DEVICES", "MODS", "UPDATE", "LOG"},
-  pages = {"SHUTDOWN", "RESTART", "ABOUT", "SETTINGS", "DEVICES", "MODS", "UPDATE", "LOG"},
+  list = {"SHUTDOWN", "RESTART", "ABOUT", "PEDALBOARD", "SETTINGS", "DEVICES", "MODS", "UPDATE", "LOG"},
+  pages = {"SHUTDOWN", "RESTART", "ABOUT", "PEDALBOARD", "SETTINGS", "DEVICES", "MODS", "UPDATE", "LOG"},
   listTicker = 0
 }
 
@@ -44,12 +44,16 @@ m.redraw = function()
       screen.move(0,10*i)
       local line = m.list[i+m.pos-3]
       if(i==3) then
-        screen.rgblevel(15,0,0)
+        norns.encoders.screen_color(2, true)
         screen.text(line)
-        screen.rgblevel(0,15,9)
         screen.text(" >")
+        screen.hexrgblevel(screen.fadedColor(0x33FF99, 0xA0))
+        screen.blend_mode(13)
+        screen.move(0, 22.5)
+        screen.rounded_rect(0, 22.5, ((screen.text_extents(string.upper(line).." >"))+4), 10, 2)
+        screen.fill()
       else
-        screen.level(4)
+        norns.encoders.screen_color(2, false)
         screen.text(line)
       end
     end

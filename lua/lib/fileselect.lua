@@ -32,10 +32,8 @@ function fs.enter(folder, callback, filter_string)
     redraw = norns.none
     norns.menu.init()
   else
-    fs.key_restore = norns.menu.get_key()
-    fs.enc_restore = norns.menu.get_enc()
-    fs.redraw_restore = norns.menu.get_redraw()
-    norns.menu.set(fs.enc, fs.key, fs.redraw)
+    fs.menu_restore = norns.menu.save()
+    norns.menu.set(fs.enc, fs.enc, fs.key, fs.redraw, nil, nil, nil, fs.tap, fs.drag)
   end
   fs.redraw()
 end
@@ -47,7 +45,7 @@ function fs.exit()
     redraw = fs.redraw_restore
     norns.menu.init()
   else
-    norns.menu.set(fs.enc_restore, fs.key_restore, fs.redraw_restore)
+    norns.menu.restore(fs.menu_restore)
   end
   if fs.path then fs.callback(fs.path)
   else fs.callback("cancel") end

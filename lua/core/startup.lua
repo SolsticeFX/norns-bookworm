@@ -55,6 +55,7 @@ _norns.monome.add = function(id, serial, name, dev)
 print("### DEVICE DETECTED :o "..name)
   if util.string_starts(name, "monome arc") then
     _norns.arc.add(id, serial, name, dev)
+    
   else _norns.grid.add(id, serial, name, dev) end
 end
 _norns.monome.remove = function(id)
@@ -109,12 +110,15 @@ end
 
 
   os.execute("sudo sh -c \"TERM=linux setterm -foreground black -clear all >/dev/tty0\"")
-  os.execute("jack_disconnect 'mod-monitor:out_1' 'system:playback_1'")
-  os.execute("jack_disconnect 'mod-monitor:out_2' 'system:playback_2'")
+  -- route mod-ui's monitor into crone, only if mod-ui's mod-host is running
+  -- (mod-ui is disabled; the rig script links its own outputs to crone)
+  os.execute("jack_lsp 2>/dev/null | grep -qx 'mod-monitor:out_1' && {"
+    .. " jack_disconnect 'mod-monitor:out_1' 'system:playback_1';"
+    .. " jack_disconnect 'mod-monitor:out_2' 'system:playback_2';"
+    .. " jack_connect 'mod-monitor:out_1' 'crone:input_1';"
+    .. " jack_connect 'mod-monitor:out_2' 'crone:input_2'; }")
   --  os.execute("jack_disconnect 'system:capture_1' 'crone:input_1'")
   --  os.execute("jack_disconnect 'system:capture_2' 'crone:input_2'")
-  os.execute("jack_connect 'mod-monitor:out_1' 'crone:input_1'")
-  os.execute("jack_connect 'mod-monitor:out_2' 'crone:input_2'")
 
 
 -- USB Audio
@@ -138,8 +142,8 @@ print("start_usb_audio(): ")
 
 
 --os.execute("/home/we/norns/scripts/usb_audio.sh")
---os.execute("aconnect solsticedev Client-131")
---os.execute("aconnect Client-131 solsticedev:1")
+os.execute("aconnect solsticedev:0 Client-131")
+os.execute("aconnect Client-131 solsticedev:1")
 
 --os.execute(jack_connect "solsticedev:MIDI_out" "a2j:Client-130 (capture): Virtual RawMIDI")
 --os.execute(jack_connect "solsticedev:MIDI_in" "a2j:Client-130 (playback): Virtual RawMIDI")

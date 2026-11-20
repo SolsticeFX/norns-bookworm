@@ -43,23 +43,26 @@ end
 
 m.redraw = function()
   screen.clear()
+  local enc = norns.encoders
   for i=1,6 do
     if (i > 3 - m.pos) and (i < #m.list - m.pos + 4) then
-      screen.move(0,10*i)
       local line = m.list[i+m.pos-3]
-      if(i==3) then
-        screen.level(15)
-      else
-        screen.level(4)
-      end
+      local selected = (i==3)
+      -- item names: scrolled by E2
+      screen.move(0,10*i)
+      enc.screen_color(2, selected)
       screen.text(line)
-      if m.list[i+m.pos-3]=="BATTERY WARNING" then
-	screen.move(128,10*i)
-	screen.text_right(norns.state.battery_warning==1 and "on" or "off")
+      -- values: changed by E3 (only while their row is selected)
+      local value = nil
+      if line=="BATTERY WARNING" then
+        value = norns.state.battery_warning==1 and "on" or "off"
+      elseif line=="LED" then
+        value = norns.state.led_brightness
       end
-      if m.list[i+m.pos-3]=="LED BRIGHTNESS" then
-        screen.move(128,10*i)
-        screen.text_right(norns.state.led_brightness)
+      if value ~= nil then
+        screen.move(126,10*i)
+        enc.screen_color(3, selected)
+        screen.text_right(value)
       end
     end
   end
@@ -85,7 +88,7 @@ m.passdone = function(txt)
       local chpasswd_status = os.execute("echo 'we:"..txt.."' | sudo chpasswd")
       local smbpasswd_status = os.execute("printf '"..txt.."\n"..txt.."\n' | sudo smbpasswd -a we")
       local hotspotpasswd_status;
-      local fd = io.open("home/we/norns/.system.hotspot_password", "w+")
+      local fd = io.open("/home/we/norns/.system.hotspot_password", "w+")
       if fd then
         io.output(fd)
         io.write(txt)
@@ -94,7 +97,11 @@ m.passdone = function(txt)
       end
       if chpasswd_status then print("ssh password changed") end
       if smbpasswd_status then print("samba password changed") end
-      if hotspotpasswd_status then print("hotspot password changed, toggle WIFI off/on to take effect") end
+      if hotspotpasswd_status then
+        print("hotspot password changed")
+        wifi.update()
+        if wifi.state == 1 then wifi.hotspot() end -- restart it with the new password
+      end
     elseif string.len(txt) <= 8 then
       print("!! password must be at least 8 characters !!")
       print("!! password has not been changed !!")

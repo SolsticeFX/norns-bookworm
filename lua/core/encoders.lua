@@ -9,7 +9,8 @@ local now = util.time()
 encoders.tick = {0,0,0,0}
 encoders.accel = {true,true,true,true}
 encoders.sens = {1,1,1,1}
-encoders.time = {now,now,now,now}
+encoders.time = {now,now,now,now}      -- last raw event
+encoders.step_time = {now,now,now,now} -- last emitted step (callback)
 encoders.colors = {0xFFFF11, 0xFF1122, 0x11FF22, 0x1122FF}
 encoders.callback = norns.none
 
@@ -73,25 +74,24 @@ encoders.get_active_color = function(n)
 end
 
 
-fadedColor = function(activeHex)
-  fade = 0xAA --vs 0xFF             
-  r = activeHex >> 16                    
-  g = (activeHex & 0xFF00) >> 8         
-  b = (activeHex & 0xFF)     
-  return ((r-r*fade//0x100) << 16) + ((g-g*fade//0x100) << 8) + (b-b*fade//0x100)
-end
-
 
 
 encoders.get_inactive_color = function(n)
   activeHex = encoders.colors[n]
   if n > 0 then
-    return fadedColor(activeHex)
+    return screen.fadedColor(activeHex, 0xAA)
   else
     return 0x666666
   end
 end
 
+
+--- set the screen colour for a UI element controlled by encoder n.
+-- active = the selected / currently-controlled element, otherwise the faded
+-- colour. read-only UI should not use this (use screen.level instead).
+encoders.screen_color = function(n, active)
+  screen.hexrgblevel(active and encoders.get_active_color(n) or encoders.get_inactive_color(n))
+end
 
 --- set acceleration
 encoders.set_accel = function(n,z)
@@ -120,23 +120,34 @@ encoders.set_sens = function(n,s)
 end
 
 --- process delta
+-- the solstice encoders run in half-period mode: every detent sends 2 raw
+-- events ~10-20 ms apart. acceleration therefore has to be timed between
+-- emitted steps (detents), not between raw events, or the second half of a
+-- single slow click looks like a fast spin and gets multiplied (skipped items).
 encoders.process = function(n,d)
-  now = util.time()
-  local diff = now - encoders.time[n]
-  encoders.time[n] = now
+  local now = util.time()
 
-  if encoders.accel[n] then
-    if diff < 0.005 then d = d*6
-    elseif diff < 0.01 then d = d*4
-    elseif diff < 0.02 then d = d*3
-    elseif diff < 0.03 then d = d*2
-    end
+  -- drop a leftover half-step after a pause or a direction change, so the
+  -- raw-event pairs stay lined up with the physical detents.
+  local t = encoders.tick[n]
+  if now - encoders.time[n] > 0.15 or (t ~= 0 and (t > 0) ~= (d > 0)) then
+    encoders.tick[n] = 0
   end
+  encoders.time[n] = now
 
   encoders.tick[n] = encoders.tick[n] + d
 
   if math.abs(encoders.tick[n]) >= encoders.sens[n] then
-    local val = math.floor(encoders.tick[n] / encoders.sens[n])
+    -- one whole detent assembled; acceleration then scales the step once,
+    -- based on the time since the previous step.
+    local val = d > 0 and 1 or -1
+    if encoders.accel[n] then
+      local diff = now - encoders.step_time[n]
+      if diff < 0.025 then val = val*3
+      elseif diff < 0.05 then val = val*2
+      end
+    end
+    encoders.step_time[n] = now
     encoders.callback(n,val)
     encoders.tick[n] = 0
     screen.ping()

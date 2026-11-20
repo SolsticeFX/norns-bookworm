@@ -55,6 +55,11 @@ end
 clock.resume = function(coro_id, ...)
   local coro = clock.threads[coro_id]
 
+  if coro == nil then
+    -- thread was cancelled after its resume event was already queued; ignore
+    return
+  end
+
   local result, mode, time, offset = coroutine.resume(coro, ...)
 
   if coroutine.status(coro) == "dead" then

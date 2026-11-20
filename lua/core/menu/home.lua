@@ -1,3 +1,5 @@
+TouchUI = require("touchui")
+
 local m = {
   pos = 1,
   list = {"SELECT", "SYSTEM", "RESTART"}
@@ -14,6 +16,27 @@ m.deinit = function()
   _menu.timer:stop()
 end
 
+
+-- NB: keep these local; a global `select` overrides Lua's builtin select()
+local function select()
+  _menu.set_page("SELECT")
+end
+
+local function system()
+  _menu.set_page("SYSTEM")
+end
+
+local function restart()
+  _menu.set_page("RESTART")
+end
+
+
+
+selectbutton = TouchUI.Button.new(0, 0,32.5, 50, 10,  "", 3, select)
+systembutton = TouchUI.Button.new(0, 0,42.5, 60, 10, "", 2, system)
+restartbutton = TouchUI.Button.new(0, 0,52.5, 70, 10 , "", 2, restart)
+
+
 m.key = function(n,z)
   if n == 2 and z == 1 then
     _menu.showstats = not _menu.showstats
@@ -21,7 +44,6 @@ m.key = function(n,z)
   elseif n == 3 and z == 1 then
     if _menu.alt == false then
       _menu.set_page(m.list[m.pos])
-      _menu.mode = false
 
     else
       norns.script.clear()
@@ -37,21 +59,18 @@ end
 m.tap = function(x,y)
   if y >= 180 and y < 240 then
     if(m.pos==1) then
-      _menu.mode = false
       _menu.set_page(m.list[m.pos])
     else
       m.pos = util.clamp(1, 1, #m.list)
     end
   elseif y >= 240 and y < 290 then
     if(m.pos==2) then
-      _menu.mode = false
       _menu.set_page(m.list[m.pos])
     else
       m.pos = util.clamp(2, 1, #m.list)
     end
   elseif y >= 290 and y < 360 then
     if(m.pos==3) then
-      _menu.mode = false
       _menu.set_page(m.list[m.pos])
     else
       m.pos = util.clamp(3, 1, #m.list)
@@ -139,19 +158,40 @@ end
 m.redraw = function()
   screen.clear()
   _menu.draw_panel()
+
+  --selectbutton:redraw()
+  --systembutton:redraw()
+  --restartbutton:redraw()
+
   for i=1,3 do
-    screen.move(0,25+10*i)
+  
     if(i==m.pos) then
+
+      
+      screen.move(0,25+10*i)
+      screen.level(15)
       screen.rgblevel(15,0,0)
-    else
-      screen.level(4)
-    end
-    screen.text(m.list[i])
-    if(i==m.pos) then
+      screen.text(m.list[i])
       screen.rgblevel(0,15,9)
       screen.text(" >")
+
+      screen.hexrgblevel(screen.fadedColor(0x33FF99, 0xA0))
+      
+      screen.move(0,22.5+10*i)
+      screen.blend_mode(13)
+     --screen.move(0,22.5+10*i)
+      screen.rounded_rect_center(0,22.5+10*i,(screen.text_extents(m.list[i].." >")+2)*2,10,2)
+      screen.fill()
+      screen.blend_mode(0)
+
+ 
+      --print(screen.text_extents(m.list[i]))
+
+
     else
-      screen.level(4)
+      screen.move(0,25+10*i)
+      screen.rgblevel(15,3,3)
+      screen.text(m.list[i])
     end 
   
   end

@@ -193,7 +193,10 @@ void *watch_loop(void *p) {
                     if (action != NULL) {
                         if (strcmp(action, "remove") == 0) {
                             rm_dev(dev, fidx);
-                        } else {
+                        } else if (udev_device_get_parent_with_subsystem_devtype(dev, "usb", NULL)) {
+                            // same filter as the startup scan: only real USB devices.
+                            // (the Pi's own USB gadget MIDI port has no usb parent / product
+                            // name and used to crash matron here.)
                             add_dev(dev, fidx);
                         }
                     } else {
@@ -356,7 +359,7 @@ char *get_device_name(struct udev_device *dev) {
         }
     }
 
-    return strdup(current_name);
+    return strdup(current_name != NULL ? current_name : "unknown");
 }
 
 int is_dev_monome_grid(struct udev_device *dev) {

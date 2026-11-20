@@ -534,4 +534,15 @@ Screen.blend_mode = function(index)
   end
 end
 
+Screen.fadedColor = function(activeHex, fade)
+  --fade = 0xAA --vs 0xFF             
+  r = activeHex >> 16                    
+  g = (activeHex & 0xFF00) >> 8         
+  b = (activeHex & 0xFF)     
+  return ((r-r*fade//0x100) << 16) + ((g-g*fade//0x100) << 8) + (b-b*fade//0x100)
+end
+
+
+
+
 return Screen
