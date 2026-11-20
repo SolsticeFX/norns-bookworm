@@ -154,6 +154,9 @@ m.key = function(n,z)
         m.group = false
         build_page()
         m.pos = m.oldpos
+      elseif _menu.paramMode then
+        -- opened with K4: K2 from the top of EDIT goes straight back to the script
+        _menu.set_param_mode(false)
       else
         m.mode = mSELECT
       end
@@ -308,33 +311,89 @@ end
 
 
 
-m.tap = function(x,y)
-   -- MODE MENU
-   if m.mode == mSELECT then
-  if y >= 180 and y < 240 then
-    if(m.mode_pos==1) then
-      m.mode = mEDIT
-      build_page()
+-- touch (as SYSTEM): drag up/down scrolls the list, a tap picks a row, a tap on the picked
+-- row does what K3 does. In EDIT a sideways drag on the picked row changes its value.
+local function touch_h() return _G.touch_resolution_y or 480 end
+local function row_off(y) return math.floor(y * 7 / touch_h()) - 2 end   -- 0 = the picked row (3rd)
+
+local function adjustable(p)
+  local t = p and params:t(p)
+  return t and t ~= params.tSEPARATOR and t ~= params.tGROUP and t ~= params.tTRIGGER
+    and t ~= params.tFILE and t ~= params.tTEXT and t ~= params.tBINARY
+end
+
+m.press = function(x, y)
+  m.touch = {kind = nil, acc = 0}
+end
+
+m.release = function(x, y) end
+
+m.drag = function(x, y, sx, sy, lx, ly)
+  local t = m.touch
+  if not t then t = {kind = nil, acc = 0}; m.touch = t end
+  if not t.kind then
+    if math.abs(x - sx) < 20 and math.abs(y - sy) < 20 then return end
+    if m.mode == mEDIT and math.abs(x - sx) > math.abs(y - sy) and row_off(sy) == 0
+        and adjustable(page[m.pos + 1]) then
+      t.kind = "value"
     else
-      m.mode_pos = util.clamp(1, 1, 3)
+      t.kind = "scroll"
+      t.ticker = ((m.mode == mPSET) and m.ps_pos or m.pos) * touch_h() / 7
     end
-  elseif y >= 240 and y < 290 then
-    if(m.mode_pos==2) then
-      init_pset()
-      m.mode = mPSET
-    else
-      m.mode_pos = util.clamp(2, 1, 3)
+  end
+  if t.kind == "value" then
+    t.acc = t.acc + (x - lx) / 12          -- one step per ~2 canvas px of sideways travel
+    while math.abs(t.acc) >= 1 do
+      local d = t.acc > 0 and 1 or -1
+      params:delta(page[m.pos + 1], d)
+      t.acc = t.acc - d
     end
-  elseif y >= 290 and y < 360 then
-    if(m.mode_pos==3) then
-      m.mode = mMAP
-      build_page()
-    else
-      m.mode_pos = util.clamp(3, 1, 3)
+  else
+    t.ticker = t.ticker - (y - ly)
+    local v = math.floor(t.ticker * 7 / touch_h() + 0.5)
+    if m.mode == mEDIT or m.mode == mMAP then
+      m.pos = util.clamp(v, 0, math.max(#page - 1, 0))
+    elseif m.mode == mPSET then
+      m.ps_pos = util.clamp(v, 0, math.max(m.ps_n - 1, 0))
     end
   end
   _menu.redraw()
 end
+
+m.tap = function(x, y)
+  -- a tap also arrives at the end of a short drag: ignore it then
+  local was = m.touch
+  m.touch = nil
+  if was and was.kind then return end
+  local off = row_off(y)
+  if m.mode == mSELECT then
+    -- EDIT / PRESETS / MAP (their old tap bands, raw px)
+    local i = (y >= 180 and y < 240) and 1 or (y >= 240 and y < 290) and 2 or (y >= 290 and y < 360) and 3 or nil
+    if i then
+      if i == m.mode_pos then m.key(3, 1) else m.mode_pos = i end
+    end
+  elseif m.mode == mEDIT or m.mode == mMAP then
+    if off == 0 then
+      m.key(3, 1)
+      m.key(3, 0)
+    else
+      local np = m.pos + off
+      if np >= 0 and np <= #page - 1 then m.pos = np end
+    end
+  elseif m.mode == mPSET then
+    if x < (_G.touch_resolution_x or 800) * 0.36 then
+      -- SAVE / LOAD / DELETE (rows 3..5, left column)
+      local a = off + 1
+      if a >= 1 and a <= 3 then
+        if a == m.ps_action then m.key(3, 1) else m.ps_action = a end
+      end
+    elseif off == 0 then
+      m.key(3, 1)
+    else
+      m.ps_pos = util.clamp(m.ps_pos + off, 0, math.max(m.ps_n - 1, 0))
+    end
+  end
+  _menu.redraw()
 end
 
 m.enc = function(n,d)
@@ -457,131 +516,118 @@ m.gamepad_axis = function (_sensor_axis,_value)
   end
 end
 
+-- house style (as SYSTEM / SETTINGS): E2 moves the selection, so list items are in E2's colour
+-- (bright when selected); E3 changes values, so values are in E3's colour; read-only text is
+-- neutral; the selected row carries the translucent pill.
+local function pill(x, base, w)
+  screen.hexrgblevel(screen.fadedColor(0x33FF99, 0xA0))
+  screen.blend_mode(13)
+  screen.move(x, base - 7.5)
+  screen.rounded_rect(x, base - 7.5, w, 10, 2)
+  screen.fill()
+  screen.blend_mode(0)
+end
+
+-- a list item in E2's colour, with " >" if it opens something. The pill only goes on the
+-- selected item when pressing it (K3 / a tap) does something: opens a page or changes a setting.
+local function item(x, y, label, selected, opens, pressable)
+  local txt = label .. (opens and " >" or "")
+  norns.encoders.screen_color(2, selected)
+  screen.move(x, y)
+  screen.text(txt)
+  if pressable == nil then pressable = opens end
+  if selected and pressable then pill(x, y, screen.text_extents(txt) + 4) end
+end
+
+local function heading(txt)
+  screen.level(15)
+  screen.move(0, 15)
+  screen.text(txt)
+end
+
+-- one EDIT / MAP row: name (E2), value (E3 in EDIT; neutral in MAP, where K3 edits the map)
+local function param_row(i, p, map)
+  local y = 10 * i
+  local sel = (i == 3)
+  local t = params:t(p)
+  local enc = norns.encoders
+  if t == params.tSEPARATOR then
+    screen.level(sel and 10 or 3)
+    screen.move(0, y + 2.5)
+    screen.line_rel(127, 0)
+    screen.stroke()
+    screen.move(63, y)
+    screen.text_center(params:get_name(p))
+    return
+  end
+  local name = map and params:get_id(p) or params:get_name(p)
+  if t == params.tGROUP then
+    item(0, y, params:get_name(p), sel, true)
+    return
+  end
+  -- pressable: EDIT triggers / toggles / files / text (K3 acts on them); MAP mappable params
+  -- (K3 opens the map editor). Plain values only change with E3, so they get no pill.
+  local mappable = t == params.tNUMBER or t == params.tCONTROL or t == params.tBINARY
+    or t == params.tOPTION or t == params.tTAPER
+  local pressable
+  if map then
+    pressable = mappable and params:get_allow_pmap(p)
+  else
+    pressable = t == params.tTRIGGER or t == params.tBINARY or t == params.tFILE or t == params.tTEXT
+  end
+  item(0, y, name, sel, false, pressable)
+  screen.move(126, y)
+  if map then
+    if t == params.tNUMBER or t == params.tCONTROL or t == params.tBINARY
+        or t == params.tOPTION or t == params.tTAPER then
+      if params:get_allow_pmap(p) then
+        local pm = norns.pmap.data[name]
+        screen.level(sel and 15 or 4)
+        screen.text_right(pm and (pm.cc .. ":" .. pm.ch .. ":" .. pm.dev) or "-")
+      end
+    end
+    return
+  end
+  enc.screen_color(3, sel)
+  if t == params.tTRIGGER then
+    if m.triggered[p] and m.triggered[p] > 0 then
+      screen.rect(123, y - 4, 3, 3)
+      screen.fill()
+    end
+  elseif t == params.tBINARY then
+    local fill = m.on[p] or m.triggered[p]
+    if fill and fill > 0 then
+      screen.rect(123, y - 4, 3, 3)
+      screen.fill()
+    else
+      screen.rect(123.5, y - 3.5, 2, 2)
+      screen.stroke()
+    end
+  else
+    screen.text_right(params:string(p))
+  end
+end
+
 m.redraw = function()
   screen.clear()
   _menu.draw_panel()
 
   -- SELECT
   if m.mode == mSELECT then
-    screen.rgblevel(4,6,15)
-    screen.move(0,15)
-    screen.text("PARAMETERS")
-    for i=1,3 do
-      if i==m.mode_pos then 
-
-        screen.rgblevel(15,2,2) 
-        screen.move(0,10*i+25)
-        screen.text(mode_item[i])
-
-        screen.rgblevel(0,15,9)  
-        screen.text(" >")
-        
-        screen.hexrgblevel(screen.fadedColor(0x33FF99, 0xA0))
-      
-        screen.move(0,22.5+10*i)
-        screen.blend_mode(13)
-       --screen.move(0,22.5+10*i)
-        screen.rounded_rect_center(0,22.5+10*i,(screen.text_extents(mode_item[i].." >")+2)*2,10,2)
-        screen.fill()
-        screen.blend_mode(0)
-
-        
-
-
-      else 
-        screen.rgblevel(15,4,4) 
-        screen.move(0,10*i+25)
-        screen.text(mode_item[i])
-      end
+    heading("PARAMETERS")
+    for i = 1, 3 do
+      item(0, 10 * i + 25, mode_item[i], i == m.mode_pos, true)
     end
-  -- EDIT
-  elseif m.mode == mEDIT then
+  -- EDIT + MAP
+  elseif m.mode == mEDIT or m.mode == mMAP then
     if m.pos == 0 then
-      local n = "PARAMETERS"
+      local n = (m.mode == mMAP) and "PARAMETER MAP" or "PARAMETERS"
       if m.group then n = n .. " / " .. m.groupname end
-      screen.level(15)
-      screen.move(0,15)
-      screen.text(n)
+      heading(n)
     end
-    for i=1,6 do
+    for i = 1, 6 do
       if (i > 2 - m.pos) and (i < #page - m.pos + 3) then
-        if i==3 then screen.level(15) else screen.level(4) end
-        local p = page[i+m.pos-2]
-        local t = params:t(p)
-        if t == params.tSEPARATOR then
-          screen.move(0,10*i+2.5)
-          screen.line_rel(127,0)
-          screen.stroke()
-          screen.move(63,10*i)
-          screen.text_center(params:get_name(p))
-        elseif t == params.tGROUP then
-          screen.move(0,10*i)
-          screen.text(params:get_name(p) .. " >")
-        else
-          screen.move(0,10*i)
-          screen.text(params:get_name(p))
-          screen.move(127,10*i)
-          if t ==  params.tTRIGGER then
-            if m.triggered[p] and m.triggered[p] > 0 then
-              screen.rect(124, 10 * i - 4, 3, 3)
-              screen.fill()
-            end
-          elseif t == params.tBINARY then
-            fill = m.on[p] or m.triggered[p]
-            if fill and fill > 0 then
-              screen.rect(124, 10 * i - 4, 3, 3)
-              screen.fill()
-            end
-          else
-            screen.text_right(params:string(p))
-          end
-        end
-      end
-    end
-  -- MAP
-  elseif m.mode == mMAP then
-    if m.pos == 0 then
-      local n = "PARAMETER MAP"
-      if m.group then n = n .. " / " .. m.groupname end
-      screen.level(15)
-      screen.move(0,15)
-      screen.text(n)
-    end
-    for i=1,6 do
-      if (i > 2 - m.pos) and (i < #page - m.pos + 3) then
-        if i==3 then screen.level(15) else screen.level(4) end
-        local p = page[i+m.pos-2]
-        local t = params:t(p)
-        local n = params:get_name(p)
-        local id = params:get_id(p)
-        if t == params.tSEPARATOR then
-          screen.move(0,10*i+2.5)
-          screen.line_rel(127,0)
-          screen.stroke()
-          screen.move(63,10*i)
-          screen.text_center(n)
-        elseif t == params.tGROUP then
-          screen.move(0,10*i)
-          screen.text(n .. " >")
-        else
-          screen.move(0,10*i)
-          screen.text(id)
-          screen.move(127,10*i)
-          if t ==  params.tNUMBER or
-              t == params.tCONTROL or
-              t == params.tBINARY or
-              t == params.tOPTION or
-              t == params.tTAPER then
-            local pm=norns.pmap.data[id]
-            if params:get_allow_pmap(p) then
-              if pm then
-                screen.text_right(pm.cc..":"..pm.ch..":"..pm.dev)
-              else
-                screen.text_right("-")
-              end
-            end
-          end
-        end
+        param_row(i, page[i + m.pos - 2], m.mode == mMAP)
       end
     end
   -- MAP EDIT
@@ -600,7 +646,11 @@ m.redraw = function()
       out_hi = util.round(param:map_value(pm.out_hi), 0.01)
     end
 
-    local function hl(x) if m.mpos==x then screen.level(15) else screen.level(4) end end
+    -- E2 picks the field (E2's colour), E3 changes the picked one (E3's colour)
+    local function hl(x)
+      if m.mpos == x then norns.encoders.screen_color(3, true)
+      else norns.encoders.screen_color(2, false) end
+    end
 
     screen.move(0,10)
     hl(0)
@@ -662,37 +712,23 @@ m.redraw = function()
     screen.move(127,60)
     hl(10)
     screen.text_right(pm.accum and "yes" or "no")
-  -- PSET
+  -- PSET: E2 picks the action, E3 the slot
   elseif m.mode == mPSET then
-    screen.level(15)
-    screen.move(0,15)
-    screen.text("PSET")
-    screen.move(0,30)
-    local v = (m.ps_action == 1) and 15 or 4
-    screen.level(v)
-    screen.text("SAVE")
-    screen.move(0,40)
-    v = (m.ps_action == 2) and 15 or 4
-    screen.level(v)
-    screen.text("LOAD")
-    screen.move(0,50)
-    v = (m.ps_action == 3) and 15 or 4
-    screen.level(v)
-    screen.text("DELETE")
-    for i=1,6 do
-      local n = i+m.ps_pos-2
+    heading("PSET")
+    local actions = {"SAVE", "LOAD", "DELETE"}
+    for a = 1, 3 do
+      item(0, 20 + 10 * a, actions[a], m.ps_action == a, false, true)
+    end
+    for i = 1, 6 do
+      local n = i + m.ps_pos - 2
       if (i > 2 - m.ps_pos) and (i < m.ps_n - m.ps_pos + 3) then
         local line = "-"
         if pset[n] then line = pset[n].name end
-        if(i==3) then
-          screen.level(15)
-        else
-          screen.level(4)
-        end
-        screen.move(50,10*i)
-        local num = (n == m.ps_last) and "*"..n or n
+        norns.encoders.screen_color(3, i == 3)
+        screen.move(50, 10 * i)
+        local num = (n == m.ps_last) and "*" .. n or n
         screen.text_right(num)
-        screen.move(56,10*i)
+        screen.move(56, 10 * i)
         screen.text(line)
       end
     end
@@ -726,6 +762,17 @@ m.init = function()
   _menu.timer.time = 0.2
   _menu.timer.count = -1
   _menu.timer:start()
+end
+
+-- K4 (param mode) opens here: the top level of EDIT, at the last spot used there
+m.open_edit = function()
+  if m.group then
+    m.group = false
+    m.pos = m.oldpos
+  end
+  m.mode = mEDIT
+  build_page()
+  m.pos = util.clamp(m.pos, 0, math.max(#page - 1, 0))
 end
 
 m.deinit = function()

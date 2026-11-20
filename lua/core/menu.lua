@@ -326,7 +326,7 @@ _menu.set_mode = function(mode)
 end
 
 _menu.set_param_mode = function(mode)
-  if paramMode == false then -- ACTIVATE PLAY MODE
+  if mode == false then -- ACTIVATE PLAY MODE (was `paramMode == false`, an undefined global, so K4 never left)
     if _menu.paramMode == true then _norns.screen_restore() end
     _menu.paramMode = false
     m[_menu.page].deinit()
@@ -372,6 +372,11 @@ _menu.set_param_mode = function(mode)
     norns.encoders.set_sens(3,2)
     _menu.panel = 4
     _menu.set_page(_menu.panels[_menu.panel])
+    -- K4 opens straight onto the EDIT list (K2 from its top level goes back to the script)
+    if m["PARAMS"].open_edit then
+      m["PARAMS"].open_edit()
+      _menu.redraw()
+    end
   end
 end
 
